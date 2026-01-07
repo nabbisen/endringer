@@ -1,15 +1,8 @@
 use anyhow::{Context, Result};
 use std::path::Path;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH};
 
-#[derive(Debug)]
-pub struct StatusDigest {
-    pub repo_name: String,
-    pub current_branch: String,
-
-    pub last_commit_summary: String,
-    pub last_commit_time: SystemTime,
-}
+use crate::types::StatusDigest;
 
 pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
     // open repository
