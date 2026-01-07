@@ -9,7 +9,9 @@ pub fn repo(repo_path: &Path) -> Result<Repository> {
     gix::open(repo_path).context("failed to open git repository")
 }
 
-pub fn status_digest(repo: &Repository) -> Result<StatusDigest> {
+pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
+    let repo = repo(repo_path)?;
+
     // repo name
     let repo_name = repo
         .workdir()
