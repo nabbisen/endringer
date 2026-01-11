@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::SystemTime};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StatusDigest {
     pub repo_name: String,
     pub current_branch: String,
