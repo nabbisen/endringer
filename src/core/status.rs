@@ -1,17 +1,14 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use gix::Repository;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH};
 
+use crate::core::repository::repository;
 use crate::types::{CommitInfo, DagInfo, StatusDigest};
 
-pub fn repo(repo_path: &Path) -> Result<Repository> {
-    gix::open(repo_path).context("failed to open git repository")
-}
-
 pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
-    let repo = repo(repo_path)?;
+    let repo = repository(repo_path)?;
 
     // repo name
     let repo_name = repo
@@ -54,8 +51,9 @@ pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
     })
 }
 
+#[deprecated(since = "0.4.0", note = "dag info fns possibly will be removed")]
 pub fn dag(repo_path: &Path) -> Result<DagInfo> {
-    let repo = repo(repo_path)?;
+    let repo = repository(repo_path)?;
 
     // Resolve a reference (HEAD, branch name, tag, etc.) to an OID.
     let oid = repo
@@ -78,6 +76,7 @@ pub fn dag(repo_path: &Path) -> Result<DagInfo> {
     Ok(DagInfo { nodes, edges })
 }
 
+#[deprecated(since = "0.4.0", note = "dag info fns possibly will be removed")]
 fn dag_walk(
     repo: &Repository,
     oid: gix::ObjectId,

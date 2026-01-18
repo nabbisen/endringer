@@ -1,1 +1,3 @@
-pub mod gix;
+pub mod branch;
+mod repository;
+pub mod status;
