@@ -1,34 +1,37 @@
 use std::path::Path;
 
 use anyhow::Result;
-use gix::{ObjectId, Repository};
+use gix::ObjectId;
 
 use crate::{
     core::{branch, commit, repository},
-    types::{BranchInfo, CommitInfo, DagInfo, StatusDigest},
+    types::{BranchInfo, CommitInfo, DagInfo, Repository, StatusDigest},
 };
 
 mod core;
 pub mod types;
 
 pub fn repository(repo_path: &Path) -> Result<Repository> {
-    repository::repository(repo_path)
+    match repository::repository(repo_path) {
+        Ok(x) => Ok(Repository { inner: x }),
+        Err(err) => Err(err),
+    }
 }
 
 pub fn local_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    branch::local_branches(repository)
+    branch::local_branches(&repository.inner)
 }
 
 pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    branch::remote_branches(repository)
+    branch::remote_branches(&repository.inner)
 }
 
 pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
-    branch::list_commits(repository)
+    branch::list_commits(&repository.inner)
 }
 
 pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
-    commit::status_digest(&repository)
+    commit::status_digest(&repository.inner)
 }
 
 pub fn commit_id_to_short_id(commit_id: ObjectId) -> String {
