@@ -1,54 +1,50 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use gix::Repository;
 
-use crate::types::BranchInfo;
+use crate::{
+    core::util::seconds_to_systemtime,
+    types::{BranchInfo, CommitInfo},
+};
+
+mod util;
 
 pub fn local_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    branches(&repository, "refs/heads/")
+    util::branches(&repository, "refs/heads/")
 }
 
 pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    branches(&repository, "refs/remotes/")
+    util::branches(&repository, "refs/remotes/")
 }
 
-fn branches(repository: &Repository, prefix: &str) -> Result<Vec<BranchInfo>> {
-    let references = repository
-        .references()
-        .context("Failed to get references")?;
-    let platform = references
-        .prefixed(prefix)
-        .context("Failed to filter references")?;
+pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
+    // 2. HEAD を取得
+    let head = repository.head()?;
+    let head_id = head
+        .id()
+        .ok_or_else(|| anyhow::anyhow!("HEAD is not pointing to a commit"))?;
 
-    let mut branches = Vec::new();
+    let mut history = Vec::new();
 
-    for res in platform {
-        // 個別の参照取得エラーをスキップするかハンドリングする
-        let reference = res.map_err(|e| anyhow::anyhow!("Reference error: {}", e))?;
+    // 3. 履歴を走査
+    let ancestors = head_id.ancestors().all()?;
 
-        let last_commit = reference.clone().peel_to_commit().map_err(
-            |e: gix::reference::peel::to_kind::Error| {
-                anyhow::anyhow!("Failed to peel reference: {}", e)
-            },
-        )?;
+    for info in ancestors {
+        let info = info?;
+        let commit = info.object()?;
 
-        let last_commit_id = last_commit.id;
+        // メッセージと著者情報の取得
+        let message = commit.message()?;
+        let author = commit.author()?;
 
-        let last_committer = last_commit.committer()?;
-        let last_commit_time = last_committer.time()?;
-        let last_commit_timestamp = last_commit_time.seconds;
-        let offset = last_commit_time.offset;
-
-        branches.push(BranchInfo {
-            // "main"
-            name: reference.name().shorten().to_string(),
-            // "refs/heads/main"
-            full_name: reference.name().as_bstr().to_string(),
-            // HEADが指すコミットID
-            last_commit_id,
-            last_commit_timestamp,
-            offset,
+        history.push(CommitInfo {
+            commit_id: info.id, // フルID
+            summary: message.summary().to_string(),
+            author: author.name.to_string(),
+            timestamp: seconds_to_systemtime(
+                commit.time().expect("failed to get commit time").seconds as u64,
+            ),
         });
     }
 
-    Ok(branches)
+    Ok(history)
 }

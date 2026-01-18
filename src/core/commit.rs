@@ -1,11 +1,15 @@
 use anyhow::Result;
-use gix::Repository;
+use gix::{ObjectId, Repository};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::time::{Duration, UNIX_EPOCH};
 
 use crate::core::repository::repository;
+use crate::core::util::seconds_to_systemtime;
 use crate::types::{CommitInfo, DagInfo, StatusDigest};
+
+pub fn commit_id_to_short_id(commit_id: ObjectId) -> String {
+    commit_id.to_string()[..7].to_owned()
+}
 
 pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
     // repo name
@@ -29,6 +33,8 @@ pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
     // last commit
     let commit = head.peel_to_commit()?;
 
+    let last_commit_id = commit.id;
+
     let last_commit_summary = commit
         .message()
         .expect("failed to get message")
@@ -37,15 +43,15 @@ pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
 
     let commit_time = {
         let secs = commit.time().expect("failed to get time").seconds;
-        UNIX_EPOCH + Duration::from_secs(secs as u64)
+        seconds_to_systemtime(secs as u64)
     };
 
     Ok(StatusDigest {
         repo_name,
         current_branch,
-
+        last_commit_id,
         last_commit_summary,
-        last_commit_time: commit_time,
+        last_commit_timestamp: commit_time,
     })
 }
 
@@ -92,7 +98,7 @@ fn dag_walk(
 
     // Collect UI‑friendly data
     let info = CommitInfo {
-        short_id: oid.to_string()[..7].to_owned(),
+        commit_id: oid,
         author: commit
             .author()
             .expect("failed to get author")
@@ -103,7 +109,7 @@ fn dag_walk(
             .expect("failed to get message")
             .summary()
             .to_string(),
-        timestamp: commit.time().expect("failed to get time").seconds,
+        timestamp: seconds_to_systemtime(commit.time().expect("failed to get time").seconds as u64),
     };
     nodes.insert(oid, info);
 

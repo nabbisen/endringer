@@ -1,11 +1,11 @@
 use std::path::Path;
 
 use anyhow::Result;
-use gix::Repository;
+use gix::{ObjectId, Repository};
 
 use crate::{
-    core::{branch, repository, status},
-    types::{BranchInfo, DagInfo, StatusDigest},
+    core::{branch, commit, repository},
+    types::{BranchInfo, CommitInfo, DagInfo, StatusDigest},
 };
 
 mod core;
@@ -23,13 +23,21 @@ pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
     branch::remote_branches(repository)
 }
 
+pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
+    branch::list_commits(repository)
+}
+
 pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
-    status::status_digest(&repository)
+    commit::status_digest(&repository)
+}
+
+pub fn commit_id_to_short_id(commit_id: ObjectId) -> String {
+    commit::commit_id_to_short_id(commit_id)
 }
 
 #[deprecated(since = "0.4.0", note = "dag info fns possibly will be removed")]
 pub fn dag(repo_path: &Path) -> Result<DagInfo> {
-    status::dag(repo_path)
+    commit::dag(repo_path)
 }
 
 #[cfg(test)]
@@ -60,11 +68,28 @@ mod tests {
     }
 
     #[test]
+    fn it_works_list_commits() {
+        let repository = repository(&Path::new(".")).unwrap();
+        let result = list_commits(&repository);
+        println!("{:?}", result);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn it_works_status_digest() {
         let repository = repository(&Path::new(".")).unwrap();
         let result = status_digest(&repository);
         println!("{:?}", result);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn it_works_commit_id_to_short_id() {
+        let repository = repository(&Path::new(".")).unwrap();
+        let status_digest = status_digest(&repository).expect("failed to get status digest");
+        let result = commit_id_to_short_id(status_digest.last_commit_id);
+        println!("{:?}", result);
+        assert!(result.len() == 7);
     }
 
     #[deprecated(since = "0.4.0", note = "dag info fns possibly will be removed")]

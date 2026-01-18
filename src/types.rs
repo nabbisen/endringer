@@ -7,27 +7,25 @@ pub struct BranchInfo {
     pub name: String,
     pub full_name: String,
     pub last_commit_id: ObjectId,
-    /// UNIXタイムスタンプ (秒)
-    pub last_commit_timestamp: i64,
-    /// タイムゾーンのオフセット (秒)
-    pub offset: i32,
+    pub last_commit_summary: String,
+    pub last_commit_timestamp: SystemTime,
 }
 
 #[derive(Debug, Clone)]
 pub struct StatusDigest {
     pub repo_name: String,
     pub current_branch: String,
-
+    pub last_commit_id: ObjectId,
     pub last_commit_summary: String,
-    pub last_commit_time: SystemTime,
+    pub last_commit_timestamp: SystemTime,
 }
 
 #[derive(Clone, Debug)]
 pub struct CommitInfo {
-    pub short_id: String,
+    pub commit_id: ObjectId,
     pub author: String,
     pub summary: String,
-    pub timestamp: i64,
+    pub timestamp: SystemTime,
 }
 
 #[deprecated(since = "0.4.0", note = "dag info fns possibly will be removed")]
