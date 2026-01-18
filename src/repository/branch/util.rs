@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use gix::Repository;
 
-use crate::{core::util::seconds_to_systemtime, types::BranchInfo};
+use crate::{types::BranchInfo, util::seconds_to_systemtime};
 
 pub fn branches(repository: &Repository, prefix: &str) -> Result<Vec<BranchInfo>> {
     let references = repository

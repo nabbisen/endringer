@@ -2,8 +2,8 @@ use anyhow::Result;
 use gix::Repository;
 
 use crate::{
-    core::util::seconds_to_systemtime,
     types::{BranchInfo, CommitInfo},
+    util::seconds_to_systemtime,
 };
 
 mod util;
@@ -17,7 +17,7 @@ pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
 }
 
 pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
-    // 2. HEAD を取得
+    // HEAD を取得
     let head = repository.head()?;
     let head_id = head
         .id()
@@ -25,7 +25,7 @@ pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
 
     let mut history = Vec::new();
 
-    // 3. 履歴を走査
+    // 履歴を走査
     let ancestors = head_id.ancestors().all()?;
 
     for info in ancestors {
