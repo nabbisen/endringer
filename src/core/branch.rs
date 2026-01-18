@@ -1,22 +1,20 @@
-use std::path::Path;
-
 use anyhow::{Context, Result};
 use gix::Repository;
 
-use crate::{core::repository::repository, types::BranchInfo};
+use crate::types::BranchInfo;
 
-pub fn local_branches(repo_path: &Path) -> Result<Vec<BranchInfo>> {
-    let repository = repository(repo_path)?;
+pub fn local_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
     branches(&repository, "refs/heads/")
 }
 
-pub fn remote_branches(repo_path: &Path) -> Result<Vec<BranchInfo>> {
-    let repository = repository(repo_path)?;
+pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
     branches(&repository, "refs/remotes/")
 }
 
-fn branches(repo: &Repository, prefix: &str) -> Result<Vec<BranchInfo>> {
-    let references = repo.references().context("Failed to get references")?;
+fn branches(repository: &Repository, prefix: &str) -> Result<Vec<BranchInfo>> {
+    let references = repository
+        .references()
+        .context("Failed to get references")?;
     let platform = references
         .prefixed(prefix)
         .context("Failed to filter references")?;

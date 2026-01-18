@@ -7,11 +7,9 @@ use std::time::{Duration, UNIX_EPOCH};
 use crate::core::repository::repository;
 use crate::types::{CommitInfo, DagInfo, StatusDigest};
 
-pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
-    let repo = repository(repo_path)?;
-
+pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
     // repo name
-    let repo_name = repo
+    let repo_name = repository
         .workdir()
         .and_then(|p| p.file_name())
         .and_then(|n| n.to_str())
@@ -19,7 +17,7 @@ pub fn status_digest(repo_path: &Path) -> Result<StatusDigest> {
         .to_string();
 
     // default branch (HEAD symbolic ref)
-    let mut head = repo.head()?;
+    let mut head = repository.head()?;
     let current_branch = if head.is_detached() {
         "(detached)".to_owned()
     } else {

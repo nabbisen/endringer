@@ -1,3 +1,3 @@
 pub mod branch;
-mod repository;
+pub mod repository;
 pub mod status;
