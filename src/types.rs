@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::SystemTime};
 
 use gix::{self, ObjectId};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Repository {
     pub inner: gix::Repository,
 }
