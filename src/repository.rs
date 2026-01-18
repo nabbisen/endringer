@@ -30,6 +30,7 @@ impl Repository {
     }
 }
 
+/// get repository
 pub fn repository(repo_path: &Path) -> Result<Repository> {
     let repository = gix::open(repo_path).context("failed to open git repository");
     match repository {
