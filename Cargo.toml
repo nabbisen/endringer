@@ -4,7 +4,7 @@ version = "0.7.1"
 edition = "2024"
 
 description = "Lib for VCS change inspection."
-authors = ["nabbisen <nabbisen@scqr.net>"]
+authors = ["nabbisen"]
 license = "Apache-2.0"
 
 categories = ["development-tools", "data-structures"]
