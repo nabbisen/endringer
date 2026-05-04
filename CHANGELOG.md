@@ -7,13 +7,57 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [Unreleased]
+
+---
+
+## [0.8.1] — 2026-05-04
+
+### Fixed (post-0.8.0 quality pass)
+
+- **`status_digest` repo_name**  — `workdir()` returns `"."` when the
+  repository is opened via a relative path; `file_name()` on `"."` returns
+  `None`.  Fixed by calling `canonicalize()` before `file_name()`.
+- **`status_digest` current_branch** — `referent_name().to_string()` returned
+  the full ref (`refs/heads/master`).  Fixed by calling `.shorten()` so the
+  field holds the conventional short name (`master`).
+- **`commit_id_to_short_id` doc example** — imported `endringer::repository`
+  (module) and called it as a function.  Corrected to
+  `endringer::repository::repository`.
+- **Timestamp type safety** — `gix_date::SecondsSinceUnixEpoch` is `i64`, but
+  all call-sites were casting to `u64`, silently wrapping for pre-1970
+  timestamps.  `seconds_to_systemtime` now accepts `i64` and saturates
+  negative values to `UNIX_EPOCH`.
+- **Author / committer mismatch in `CommitInfo`** — `CommitInfo.author` was
+  populated from the author signature while `CommitInfo.timestamp` used
+  `commit.time()` which returns the *committer* time.  Both now come from the
+  author signature, matching `git log` default behaviour.
+
+### Changed
+
+- **`CommitId::short()`** — encodes only the first 4 raw bytes (8 hex chars)
+  then truncates to 7, avoiding the full 40-char string allocation.
+- **Derives** — `BranchInfo` gained `Clone + PartialEq + Eq`; `StatusDigest`,
+  `CommitInfo`, `TagInfo` gained `PartialEq + Eq`.  All public types now share
+  a consistent `Clone + Debug + PartialEq + Eq` baseline.
+- **Release tarball naming** — changed from `endringer-v{version}.tar.gz` to
+  `endringer-{version}.tar.gz` (no `v` prefix in the filename; git tag keeps
+  the `v` prefix).  Example: `dist/endringer-0.8.1.tar.gz`.
+
+### Tests
+
+- All 10 unit tests strengthened with meaningful assertions (field-value
+  checks, ordering invariants, timestamp-range guards, error-path checks).
+
+---
+
 ## [0.8.0] — 2026-05-04
 
 ### Added
 
-- **`types::CommitId`** — opaque SHA-1 commit identifier that replaces `gix::ObjectId`
-  in the public API.  Implements `Display` (40-char hex) and provides
-  `CommitId::short()` for the conventional 7-character abbreviation.
+- **`types::CommitId`** — opaque SHA-1 commit identifier that replaces
+  `gix::ObjectId` in the public API.  Implements `Display` (40-char hex) and
+  provides `CommitId::short()` for the conventional 7-character abbreviation.
 - **`types::TagInfo`** — information about a tag (name, full ref, target commit
   ID, commit summary, commit timestamp).
 - **`Repository::list_tags()`** — returns all tags, peeling annotated tag
@@ -32,19 +76,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `commit_id_to_short_id` — parameter type changed from `gix::ObjectId` to
   `CommitId`.  **Breaking change.**
 - `repository::branch` and `repository::commit` submodules changed from `pub`
-  to `pub(crate)` — they were never intended as public API.  **Breaking change.**
-- New `repository::tag` submodule added as `pub(crate)`.
+  to `pub(crate)`.  **Breaking change.**
 
 ### Motivation
 
-The `gix::ObjectId` type was leaking into the public API of `BranchInfo`,
-`StatusDigest`, and `CommitInfo`, forcing downstream crates to take a
-transitive dependency on `gix` even if they only needed endringer's
-higher-level abstractions.  The new `CommitId` newtype closes this boundary.
-
-Similarly, the internal `repository::branch` / `repository::commit` submodules
-were `pub`, making it possible for callers to bypass `Repository` and call
-internal helpers directly.  Making them `pub(crate)` enforces the intended
+`gix::ObjectId` was leaking into the public API, forcing downstream crates to
+take a transitive dependency on `gix`.  The new `CommitId` newtype closes this
+boundary.  Internal submodules were made `pub(crate)` to enforce the intended
 interface contract.
 
 ---
@@ -52,3 +90,8 @@ interface contract.
 ## [0.7.1] — 2025
 
 Initial public release with branch listing, commit history, and status digest.
+
+[Unreleased]: https://github.com/example/endringer/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/example/endringer/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/example/endringer/compare/v0.7.1...v0.8.0
+[0.7.1]: https://github.com/example/endringer/releases/tag/v0.7.1

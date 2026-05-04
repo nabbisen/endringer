@@ -9,8 +9,8 @@
 #   1. Read version from Cargo.toml
 #   2. Verify the working tree is clean
 #   3. Run the full test suite
-#   4. Create an annotated git tag  v{version}
-#   5. Create a source tarball      endringer-v{version}.tar.gz
+#   4. Create an annotated git tag  v{version}   (e.g. v0.9.0)
+#   5. Create a source tarball      {version}.tar.gz  (e.g. endringer-0.9.0.tar.gz)
 #      (via git archive — no build artifacts, no .git directory)
 #   6. Print a release checklist
 
@@ -31,7 +31,10 @@ cd "${REPO_ROOT}"
 # ── 1. read version ───────────────────────────────────────────────────────────
 VERSION="$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')"
 TAG="v${VERSION}"
-TARBALL="endringer-${TAG}.tar.gz"
+# Tarball filename uses bare version (no "v" prefix).
+# Git tag keeps the "v" prefix: v0.9.0, v0.10.0, …
+# Example: dist/endringer-0.9.0.tar.gz
+TARBALL="endringer-${VERSION}.tar.gz"
 
 echo "releasing endringer ${TAG}"
 echo ""

@@ -1,9 +1,9 @@
 [package]
 name = "endringer"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2024"
 
-description = "Lightweight Git repository introspection: branches, commits, tags, and status digest."
+description = "A lean Lib for VCS repository introspection."
 authors = ["nabbisen"]
 license = "Apache-2.0"
 

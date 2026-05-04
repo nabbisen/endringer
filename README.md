@@ -1,6 +1,6 @@
 # endringer
 
-A Rust library for Git repository introspection, following the UNIX philosophy of doing one thing well.
+A lean Lib for VCS repository introspection.
 
 [![crates.io](https://img.shields.io/crates/v/endringer?label=rust)](https://crates.io/crates/endringer)
 [![License](https://img.shields.io/github/license/nabbisen/endringer)](https://github.com/nabbisen/endringer/blob/main/LICENSE)
