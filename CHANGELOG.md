@@ -7,6 +7,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.19.2] — 2026-05-04
+
+### Changed
+
+- **`gix` dependency updated `0.77` → `0.83`** (latest as of 2026-04-27).
+
+  No API changes were required in endringer — all 88 tests pass unchanged.
+
+  Sub-crate version deltas across the 6 minor releases:
+
+  | Sub-crate | 0.77 | 0.83 | Δ |
+  |---|---|---|---|
+  | gix-hash | 0.21 | 0.25 | +4 |
+  | gix-actor | 0.37 | 0.41 | +4 |
+  | gix-object | 0.54 | 0.60 | +6 |
+  | gix-ref | 0.57 | 0.63 | +6 |
+  | gix-blame | 0.7 | 0.13 | +6 |
+  | gix-ignore | 0.18 | 0.21 | +3 |
+  | gix-index | 0.45 | 0.51 | +6 |
+  | gix-submodule | 0.24 | 0.30 | +6 |
+  | gix-worktree | 0.46 | 0.52 | +6 |
+
+  The other direct dependencies (`anyhow 1.0.102`, `tokio 1.52.1`,
+  `tempfile 3.27.0`) are already at their latest published versions.
+
+---
+
 ## [0.19.1] — 2026-05-04
 
 ### Fixed
