@@ -7,7 +7,7 @@ use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StatusDigest, TagInfo,
+    StatusDigest, TagInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -193,6 +193,35 @@ impl Repository {
     /// contiguous range of lines introduced by the same commit.
     pub fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {
         self.backend.blame(path)
+    }
+
+    // ── Working tree status ────────────────────────────────────────────── //
+
+    /// Returns per-file working-tree status.
+    ///
+    /// Equivalent to `git status` output, broken into staged changes,
+    /// unstaged changes, and untracked files. Bare repositories always
+    /// return an empty [`WorktreeStatus`].
+    ///
+    /// **Note**: gitignore rules are not applied to untracked files in the
+    /// current implementation.
+    pub fn worktree_status(&self) -> Result<WorktreeStatus> {
+        self.backend.worktree_status()
+    }
+
+    // ── File content ───────────────────────────────────────────────────── //
+
+    /// Returns the raw content of `path` (relative to the repository root)
+    /// as it exists in the tree of `commit_id`.
+    ///
+    /// Useful for reading historical file versions without checking out the
+    /// commit.
+    pub fn file_at_commit(
+        &self,
+        path: &std::path::Path,
+        commit_id: &CommitId,
+    ) -> Result<Vec<u8>> {
+        self.backend.file_at_commit(path, commit_id)
     }
 }
 

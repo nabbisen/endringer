@@ -69,6 +69,7 @@ cargo publish -p endringer-async
 | [v0.13.0] | 2026-05-04 | Cargo workspace (5 crates), `CommitId: Ord`, `DiffSummary` ordering, fixture tests, async tests. |
 | [v0.14.0] | 2026-05-04 | `GitBackend` lock-free, `CommitInfo.parents`, `is_dirty()`, jj annotated tag `Err`. |
 | [v0.15.0] | 2026-05-04 | Test split (`support/fixture.rs`), `merge_base`, `is_ancestor`, `blame`, `BlameEntry`. |
+| [v0.16.0] | 2026-05-04 | `WorktreeStatus`, `file_at_commit`, recursive tree traversal. |
 | [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
@@ -127,21 +128,28 @@ Seven async integration tests in `endringer-async/tests/async_tests.rs`.
 
 ## Planned
 
-### Blame / file history
+### Status heuristic: content-hash fallback
 
-`Repository::blame(path)` returning per-line attribution. Requires gix's blame
-module. Planned for a future minor release.
+The current `worktree_status` / `is_dirty` implementation uses mtime + file
+size as a heuristic. Files modified without changing size within the same
+clock second will not be detected. A future release will add a SHA-1 content
+comparison for entries where mtime and size match (matching git's own
+`update-index` behaviour).
 
-### Working tree status details
+### Gitignore support for untracked files
 
-Richer API beyond `is_dirty()`: per-file status (staged, unstaged, untracked).
-Useful for building status bar widgets or pre-commit hooks.
+`WorktreeStatus.untracked` currently lists all unindexed files regardless of
+`.gitignore`. A future release will apply gitignore rules via gix's dirwalk API.
 
-### Commit graph parent traversal helpers
+### Submodule listing
 
-Helper methods on top of `CommitInfo.parents`:
-- `Repository::merge_base(a, b)` — common ancestor
-- `Repository::is_ancestor(candidate, descendant)` — ancestor check
+`Repository::submodules()` — enumerate submodule paths and remote URLs without
+running the `git submodule` binary.
+
+### Stash entries
+
+`Repository::stash_entries()` — list stash entries with their commit IDs and
+descriptions.
 
 ---
 
@@ -153,8 +161,9 @@ remain possible in any version, but from v1.0 onward every breaking change
 what changed and how to update calling code.
 
 Readiness criteria:
-- `find_commit`, `diff`, annotated tags, parents, and `is_dirty` are all stable.
+- Core APIs (`find_commit`, `diff`, annotated tags, `parents`, `is_dirty`, `worktree_status`, `blame`) are all stable.
 - At least two downstream crates have used the library across two minor versions.
+- The status heuristic fallback and gitignore support are either implemented or explicitly deferred.
 - No remaining "wish we'd done this differently" items in the public API.
 
 ---
@@ -178,3 +187,5 @@ Readiness criteria:
 [v0.12.0]: https://github.com/nabbisen/endringer/releases/tag/v0.12.0
 [v0.13.0]: https://github.com/nabbisen/endringer/releases/tag/v0.13.0
 [v0.14.0]: https://github.com/nabbisen/endringer/releases/tag/v0.14.0
+[v0.15.0]: https://github.com/nabbisen/endringer/releases/tag/v0.15.0
+[v0.16.0]: https://github.com/nabbisen/endringer/releases/tag/v0.16.0

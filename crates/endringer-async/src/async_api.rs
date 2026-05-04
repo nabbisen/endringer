@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer::repository::{Repository, jj_repository, repository};
-use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo, WorktreeStatus};
 
 /// Async wrapper around [`Repository`].
 ///
@@ -142,5 +142,19 @@ impl AsyncRepository {
     pub async fn blame(&self, path: std::path::PathBuf) -> Result<Vec<BlameEntry>> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.blame(&path)).await?
+    }
+
+    pub async fn worktree_status(&self) -> Result<WorktreeStatus> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.worktree_status()).await?
+    }
+
+    pub async fn file_at_commit(
+        &self,
+        path: std::path::PathBuf,
+        commit_id: CommitId,
+    ) -> Result<Vec<u8>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.file_at_commit(&path, &commit_id)).await?
     }
 }

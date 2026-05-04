@@ -4,6 +4,7 @@
 //! [`endringer_core::backend::VcsBackend`].
 
 pub(crate) mod blame;
+pub(crate) mod object;
 pub(crate) mod branch;
 pub(crate) mod commit;
 pub(crate) mod diff;

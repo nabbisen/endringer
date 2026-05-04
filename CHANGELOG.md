@@ -7,6 +7,54 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.16.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **`VcsBackend` gained two new required methods**: `worktree_status` and
+  `file_at_commit`. Custom backend implementations must add these.
+
+  **Migration**: add both methods. For backends that do not support working-tree
+  inspection, `worktree_status` may return `Ok(WorktreeStatus::default())` and
+  `file_at_commit` may return `Err(anyhow!("not supported"))`.
+
+### Added
+
+- **`Repository::worktree_status() -> Result<WorktreeStatus>`** — full per-file
+  working-tree status equivalent to `git status`:
+  - `staged`: files whose blob OID in the index differs from the HEAD tree
+    (Added, Modified, Deleted).
+  - `unstaged`: files whose on-disk mtime or size differs from the index stat
+    cache (Modified, Deleted).
+  - `untracked`: files present in the working tree but not in the index.
+    **Note**: gitignore rules are not yet applied — all unindexed files are
+    reported. A future release will honour `.gitignore`.
+  All three lists are sorted ascending by path.
+
+- **`Repository::file_at_commit(path, commit_id) -> Result<Vec<u8>>`** —
+  returns the raw bytes of a file as it exists in any commit's tree. Supports
+  nested paths (e.g. `src/util/helper.rs`). Returns an error if the path does
+  not exist in that commit.
+
+- **`WorktreeStatus`**, **`StatusEntry`**, **`ChangeKind`** types in
+  `endringer-core::types` (re-exported from `endringer`).
+
+- **`AsyncRepository::worktree_status()`** and **`file_at_commit()`** async
+  variants via `spawn_blocking`.
+
+- **`tests/git_status.rs`** — 12 new integration tests covering staged,
+  unstaged, untracked detection, sorted output, and `file_at_commit` (including
+  nested paths, missing files, and wrong-commit errors).
+
+### Known limitations
+
+- The unstaged / `is_dirty` heuristic uses mtime + file-size only. Files
+  modified without changing size within the same clock second will not be
+  detected. A SHA-1 content-hash fallback will be added in a future release.
+- `WorktreeStatus.untracked` does not apply gitignore rules.
+
+---
+
 ## [0.15.0] — 2026-05-04
 
 ### Changed — Breaking

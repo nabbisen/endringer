@@ -8,7 +8,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 
-use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo, WorktreeStatus};
 
 /// Common interface implemented by every VCS backend.
 ///
@@ -66,4 +66,18 @@ pub trait VcsBackend: Send + Sync {
     /// `path` must be relative to the repository root.
     /// Returns [`BlameEntry`] items in line order (ascending `start_line`).
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>>;
+
+    // ── Working tree status ────────────────────────────────────────────── //
+
+    /// Returns per-file working-tree status (staged changes, unstaged changes,
+    /// and untracked files).
+    fn worktree_status(&self) -> Result<WorktreeStatus>;
+
+    // ── File content ───────────────────────────────────────────────────── //
+
+    /// Returns the raw content of `path` (relative to the repository root)
+    /// as it exists in the tree of `commit_id`.
+    ///
+    /// Returns an error if the path does not exist in that commit's tree.
+    fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>>;
 }

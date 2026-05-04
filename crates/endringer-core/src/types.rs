@@ -230,3 +230,47 @@ pub struct BlameEntry {
     /// was renamed between that commit and the blamed file.
     pub original_path: Option<std::path::PathBuf>,
 }
+
+// ── Working tree status ───────────────────────────────────────────────────── //
+
+/// The kind of change a [`StatusEntry`] represents.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ChangeKind {
+    /// A new file was added (not present in the reference point).
+    Added,
+    /// An existing file was modified.
+    Modified,
+    /// A tracked file was deleted.
+    Deleted,
+}
+
+/// A single file entry in a [`WorktreeStatus`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatusEntry {
+    /// Path relative to the repository root, using the platform path separator.
+    pub path: std::path::PathBuf,
+    /// Nature of the change.
+    pub kind: ChangeKind,
+}
+
+/// Detailed working-tree status, equivalent to the output of `git status`.
+///
+/// Returned by [`crate::repository::Repository::worktree_status`].
+///
+/// ## Untracked files
+///
+/// `untracked` lists every file present in the working tree that the index
+/// does not track. **Gitignore rules are not applied in the current
+/// implementation** — ignored files will appear here. A future release will
+/// honour `.gitignore`.
+#[derive(Clone, Debug, Default)]
+pub struct WorktreeStatus {
+    /// Files whose staged blob OID differs from the HEAD tree
+    /// (includes new files added to the index and staged deletions).
+    pub staged: Vec<StatusEntry>,
+    /// Files whose on-disk content or metadata differs from the index
+    /// (modifications and deletions that have not been staged yet).
+    pub unstaged: Vec<StatusEntry>,
+    /// Files present in the working tree but not tracked by git.
+    pub untracked: Vec<std::path::PathBuf>,
+}

@@ -4,9 +4,9 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo, WorktreeStatus};
 
-use crate::{blame, branch, commit, diff, graph, status, tag};
+use crate::{blame, branch, commit, diff, graph, object, status, tag};
 
 /// Git backend.
 ///
@@ -112,5 +112,13 @@ impl VcsBackend for GitBackend {
 
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {
         blame::blame(&repo!(self), path)
+    }
+
+    fn worktree_status(&self) -> Result<WorktreeStatus> {
+        status::worktree_status(&repo!(self))
+    }
+
+    fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>> {
+        object::file_at_commit(&repo!(self), path, commit_id)
     }
 }
