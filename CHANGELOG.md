@@ -7,7 +7,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [Unreleased]
+## [0.13.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **Cargo workspace restructure.** The single `endringer` crate is now a
+  five-crate workspace. External crate API (name, types, constructors) is
+  unchanged for users who depend on `endringer` by name.
+  | Crate | Role |
+  |---|---|
+  | `endringer-core` | `CommitId`, all public types, `VcsBackend` trait |
+  | `endringer-git`  | `GitBackend` (gix-powered) |
+  | `endringer-jj`   | `JjBackend` (delegates to `endringer-git`) |
+  | `endringer`      | Facade — `Repository`, constructors, re-exports |
+  | `endringer-async`| Async facade (replaces the `async` feature flag) |
+- **`async` feature flag removed from `endringer`.**  
+  Migrate: replace `endringer = { features = ["async"] }` with  
+  `endringer-async = "0.13"` and update imports to `endringer_async::AsyncRepository`.
+
+### Added
+
+- **`CommitId: PartialOrd + Ord`** — byte-level lexicographic ordering.  
+  `BTreeSet<CommitId>`, `BTreeMap<CommitId, _>`, and `.sort()` on ID collections now work.
+- **`DiffSummary` path ordering guarantee** — `added`, `modified`, and `deleted`
+  paths are now sorted ascending within each category (enforced by the backend).
+- **`Repository::with_backend(backend, kind)`** — public constructor for
+  injecting custom [`VcsBackend`] implementations.
+- **`VcsBackend` re-exported** from `endringer` — downstream crates can implement
+  custom backends without depending on `endringer-core` directly.
+- **`AsyncRepository::open_jj(path)`** — async constructor for Jujutsu repos.
+- **Fixture-based integration tests** (`crates/endringer/tests/integration.rs`) —
+  environment-independent test suite using `tempfile` + `git` CLI.
+- **`#[tokio::test]` async tests** (`crates/endringer-async/tests/async_tests.rs`) —
+  7 async integration tests covering `AsyncRepository`.
+
+### Fixed
+
+- `GitBackend::open` now uses `gix::discover` instead of `gix::open`, so
+  `repository(Path::new("."))` works from any subdirectory of a git worktree.
 
 ---
 

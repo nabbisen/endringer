@@ -1,0 +1,20 @@
+[package]
+name         = "endringer-async"
+description  = "Async facade for endringer (tokio::task::spawn_blocking)."
+categories   = ["development-tools", "filesystem", "asynchronous"]
+keywords     = ["git", "jj", "vcs", "repository", "async"]
+version.workspace      = true
+edition.workspace      = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+rust-version.workspace = true
+
+[dependencies]
+endringer = { workspace = true }
+tokio     = { workspace = true }
+anyhow    = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros"] }
+tempfile = { workspace = true }

@@ -1,0 +1,21 @@
+[package]
+name         = "endringer"
+description  = "Lightweight VCS repository introspection — Git and Jujutsu via gix."
+categories   = ["development-tools", "filesystem"]
+keywords     = ["git", "jj", "vcs", "repository"]
+readme       = "../../README.md"
+version.workspace      = true
+edition.workspace      = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+rust-version.workspace = true
+
+[dependencies]
+endringer-core = { workspace = true }
+endringer-git  = { workspace = true }
+endringer-jj   = { workspace = true }
+anyhow         = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
