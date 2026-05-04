@@ -1,6 +1,6 @@
 [package]
 name = "endringer"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 
 description = "A lean library for VCS repository introspection."
@@ -8,24 +8,28 @@ authors = ["nabbisen"]
 license = "Apache-2.0"
 
 categories = ["development-tools", "filesystem"]
-keywords = ["git", "vcs", "repository", "commits", "tags"]
+keywords = ["git", "jj", "vcs", "repository", "async"]
 repository = "https://github.com/nabbisen/endringer"
 readme = "README.md"
 rust-version = "1.85.0"
 
-[profile.release]     # shrink executable size
+[features]
+default = []
+# Enables AsyncRepository (requires a tokio runtime in the caller).
+async = ["dep:tokio"]
+
+[profile.release]
 opt-level = "z"
 lto = true
-# panic = "abort"
 strip = true
 codegen-units = 1
 
-[profile.dev]         # to reasonably improve productivity
-opt-level = 1         # slightly optimize
-lto = false           # disable link-time optimizations
-# strip = "debuginfo" # reduce size
+[profile.dev]
+opt-level = 1
+lto = false
 incremental = true
 
 [dependencies]
 anyhow = "1"
 gix = "0.77"
+tokio = { version = "1", features = ["rt", "rt-multi-thread"], optional = true }

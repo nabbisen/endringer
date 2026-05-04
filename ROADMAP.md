@@ -58,6 +58,7 @@ cargo publish
 | [v0.8.1] | 2026-05-04 | バグ修正（repo_name・current_branch・timestamp 型安全性・author 一貫性）、derive 整合、tarball 命名変更 |
 | [v0.9.0] | 2026-05-04 | `CommitId::from_hex`、`SortOrder`、`list_commits_sorted`、`list_tags_sorted`、annotated タグ |
 | [v0.10.0] | 2026-05-04 | `CommitInfo` コミッター情報、`find_commit`、`diff`、`remote_url` |
+| [v0.11.0] | 2026-05-04 | `async` feature flag (`AsyncRepository`)、Jujutsu バックエンド (`JjBackend`)、`VcsBackend` trait |
 
 ---
 
@@ -114,15 +115,16 @@ v1.0.0 以降は major バージョンなしに破壊的変更を行いません
 
 ## 長期 / 探索的
 
-### 非同期ファサード（`async` feature flag）
+### 非同期ファサード（`async` feature flag） ✅ v0.11.0 にて実装済み
 
-`tokio::task::spawn_blocking` を用いて非同期コンテキスト向けのラッパーを提供します。
-デフォルト off で、既存の同期 API を維持します。
+`tokio::task::spawn_blocking` を用いて非同期コンテキスト向けの `AsyncRepository` を提供。
+`Cargo.toml` に `endringer = { version = "0.11", features = ["async"] }` を追記するだけで有効化。
 
-### Jujutsu (jj) バックエンド
+### Jujutsu (jj) バックエンド ✅ v0.11.0 にて実装済み
 
-拡張依頼書が言及する `vcs::jj` アダプタ。
-jj の普及度を見ながら、`Repository` の同一インタフェースで切り替えられる形を目指します。
+`jj_repository(path)` で Jujutsu リポジトリを開ける。
+`VcsBackend` trait により Git・jj どちらも同一の `Repository` API で操作可能。
+jj バイナリが `$PATH` にあれば動作（`jj-lib` クレート依存なし）。
 
 ---
 

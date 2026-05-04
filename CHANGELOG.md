@@ -11,6 +11,47 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.11.0] — 2026-05-04
+
+### Added
+
+- **Jujutsu (jj) backend** — `repository::jj_repository(path)` opens a
+  Jujutsu repository.  All 15 `VcsBackend` operations are implemented via `jj`
+  CLI invocations (no native jj-lib dependency).  Requires `jj` on `$PATH`.
+  - `src/jj/mod.rs` — `JjBackend` implementing `VcsBackend`
+  - `src/jj/parse.rs` — tab-delimited jj template output parser
+- **`async` feature flag** — opt-in async façade via `tokio::task::spawn_blocking`.
+  - `AsyncRepository` in `src/async_api.rs`
+  - `Cargo.toml`: `[features] async = ["dep:tokio"]`
+  - tokio dependency is optional; default features unchanged
+- **`Repository::backend_kind()`** — returns `BackendKind::Git` or
+  `BackendKind::Jj`; re-exported as `endringer::BackendKind`.
+- **`CommitId::from_bytes(Vec<u8>)`** — low-level constructor for backend
+  implementors.
+- **`CommitId::as_bytes()`** — access the raw bytes.
+- **`types::BackendKind`** — `enum { Git, Jj }`.
+
+### Architecture (Breaking changes)
+
+- **`VcsBackend` trait** (`src/backend.rs`) — `pub(crate)` trait abstracting
+  all VCS operations.  `Repository` now holds `Box<dyn VcsBackend>` instead
+  of a concrete git handle.  This enables runtime backend selection.
+- **`CommitId` storage changed** — internal representation changed from
+  `gix::ObjectId` to `Vec<u8>`.  `CommitId::from_hex` now accepts both 40-char
+  (SHA-1) and 64-char (SHA-256) hex strings.  `Display` outputs raw lowercase
+  hex rather than delegating to `gix`.  **External API is unchanged.**
+- **Git code moved** — `src/repository/{branch,commit,tag,diff}.rs` →
+  `src/git/{branch,commit,tag,diff}.rs` as a `GitBackend` struct implementing
+  `VcsBackend`.
+- **`jj_repository` constructor added** to `src/repository.rs`.
+
+### Non-breaking
+
+- `gix::Repository` is not `Sync`; `GitBackend` wraps it in `std::sync::Mutex`
+  so `Repository` is now `Send + Sync`, enabling use in async runtimes.
+
+---
+
 ## [0.10.0] — 2026-05-04
 
 ### Added

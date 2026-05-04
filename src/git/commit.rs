@@ -3,14 +3,10 @@ use gix::Repository;
 
 use crate::{
     types::{CommitId, StatusDigest},
-    util::seconds_to_systemtime,
+    util::{gix_id_to_commit_id, seconds_to_systemtime},
 };
 
-/// Builds a [`StatusDigest`] from the repository's current HEAD.
-pub(crate) fn status_digest(repository: &Repository) -> Result<StatusDigest> {
-    // Derive repo name from working directory path.
-    // gix may return a relative path (e.g. ".") when the repository was opened
-    // from a relative path, so we canonicalize to an absolute path first.
+pub(super) fn status_digest(repository: &Repository) -> Result<StatusDigest> {
     let repo_name = repository
         .workdir()
         .and_then(|p| p.canonicalize().ok())
@@ -20,9 +16,6 @@ pub(crate) fn status_digest(repository: &Repository) -> Result<StatusDigest> {
         .unwrap_or("unknown")
         .to_owned();
 
-    // Resolve the current branch name from HEAD.
-    // `referent_name()` returns the full ref (e.g. `refs/heads/main`);
-    // `.shorten()` yields the conventional short form (e.g. `main`).
     let mut head = repository.head()?;
     let current_branch = if head.is_detached() {
         "(detached)".to_owned()
@@ -33,9 +26,8 @@ pub(crate) fn status_digest(repository: &Repository) -> Result<StatusDigest> {
             .to_string()
     };
 
-    // Peel HEAD to its commit.
     let commit = head.peel_to_commit()?;
-    let last_commit_id = CommitId(commit.id);
+    let last_commit_id: CommitId = gix_id_to_commit_id(commit.id);
 
     let last_commit_summary = commit
         .message()

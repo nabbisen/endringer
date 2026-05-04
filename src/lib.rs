@@ -1,56 +1,60 @@
-//! **endringer** — lightweight Git repository introspection.
+//! # endringer
 //!
-//! This library provides a thin, ergonomic layer on top of `gix` for reading
-//! common repository state: branches, commit history, tags, and a quick
-//! status digest.  It follows the UNIX philosophy of doing one thing well:
-//! endringer reads and inspects a repository; it delegates everything else
-//! (persistence, UI, scheduling) to the caller.
+//! Lightweight VCS repository introspection.
+//! Supports **Jujutsu** (via the `jj` CLI) and **Git** (via `gix`).
 //!
-//! # Quick start
+//! ## Quick start (Git)
 //!
 //! ```no_run
-//! use std::path::Path;
 //! use endringer::repository::repository;
+//! use std::path::Path;
 //!
 //! let repo = repository(Path::new(".")).expect("open repo");
-//!
-//! // Current state
 //! let digest = repo.status_digest().expect("status digest");
 //! println!("{} @ {}", digest.current_branch, digest.last_commit_id.short());
-//!
-//! // Recent commits
-//! let commits = repo.list_commits().expect("list commits");
-//! for c in &commits {
-//!     println!("{} {}", c.commit_id.short(), c.summary);
-//! }
-//!
-//! // Tags
-//! let tags = repo.list_tags().expect("list tags");
-//! for t in &tags {
-//!     println!("{}", t.name);
-//! }
 //! ```
 //!
-//! # Public surface
+//! ## Quick start (Jujutsu)
 //!
-//! - [`repository`] — open a repository at a given path
-//! - [`repository::Repository`] — the main handle for all operations
-//! - [`types`] — all public data types (`CommitId`, `BranchInfo`, …)
-//! - [`commit_id_to_short_id`] — convenience helper
-//! - [`types::CommitId::from_hex`] — parse a commit ID from a hex string
+//! ```no_run
+//! use endringer::repository::jj_repository;
+//! use std::path::Path;
+//!
+//! let repo = jj_repository(Path::new(".")).expect("open jj repo");
+//! let digest = repo.status_digest().expect("status digest");
+//! ```
+//!
+//! ## Async (requires `async` feature)
+//!
+//! ```no_run
+//! # #[tokio::main]
+//! # async fn main() -> anyhow::Result<()> {
+//! use endringer::async_api::AsyncRepository;
+//!
+//! let repo = AsyncRepository::open(std::path::Path::new(".")).await?;
+//! let commits = repo.list_commits().await?;
+//! # Ok(())
+//! # }
+//! ```
 
+pub(crate) mod backend;
+pub(crate) mod git;
+pub(crate) mod jj;
 pub mod repository;
 pub mod types;
 mod util;
 
+#[cfg(feature = "async")]
+pub mod async_api;
+
+pub use types::BackendKind;
 pub use types::CommitIdFromHexError;
 pub use types::DiffSummary;
 pub use types::SortOrder;
 
-/// Converts a [`types::CommitId`] to its conventional 7-character hex
-/// abbreviation.
+/// Converts a [`types::CommitId`] to its 7-character hex abbreviation.
 ///
-/// This is a free-function convenience wrapper around [`types::CommitId::short`].
+/// Convenience wrapper around [`types::CommitId::short`].
 pub fn commit_id_to_short_id(commit_id: types::CommitId) -> String {
     util::commit_id_to_short_id(commit_id)
 }

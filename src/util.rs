@@ -4,10 +4,7 @@ use crate::types::CommitId;
 
 /// Converts a [`CommitId`] to its conventional 7-character hex abbreviation.
 ///
-/// This is a convenience free function.  You can also call
-/// [`CommitId::short`] directly.
-///
-/// # Example
+/// This is a convenience free function; see also [`CommitId::short`].
 ///
 /// ```no_run
 /// use endringer::{repository::repository, commit_id_to_short_id};
@@ -24,15 +21,16 @@ pub fn commit_id_to_short_id(commit_id: CommitId) -> String {
 /// Converts a signed Unix timestamp (seconds since epoch, as returned by gix)
 /// to a [`SystemTime`].
 ///
-/// Git stores timestamps as `i64`.  For the rare case of a negative value
-/// (commits authored or committed before 1970-01-01) the result is clamped to
-/// `UNIX_EPOCH` rather than silently wrapping.
+/// Negative values (pre-1970 commits) are saturated to `UNIX_EPOCH`.
 pub(crate) fn seconds_to_systemtime(seconds: i64) -> SystemTime {
     if seconds >= 0 {
         UNIX_EPOCH + Duration::from_secs(seconds as u64)
     } else {
-        // Timestamps before 1970 are vanishingly rare in real repositories.
-        // Saturate to UNIX_EPOCH rather than wrap to a date far in the future.
         UNIX_EPOCH
     }
+}
+
+/// Converts a `gix::ObjectId` to a backend-agnostic [`CommitId`].
+pub(crate) fn gix_id_to_commit_id(id: gix::ObjectId) -> CommitId {
+    CommitId::from_bytes(id.as_slice().to_vec())
 }
