@@ -37,10 +37,14 @@
 //! - [`repository::Repository`] — the main handle for all operations
 //! - [`types`] — all public data types (`CommitId`, `BranchInfo`, …)
 //! - [`commit_id_to_short_id`] — convenience helper
+//! - [`types::CommitId::from_hex`] — parse a commit ID from a hex string
 
 pub mod repository;
 pub mod types;
 mod util;
+
+pub use types::CommitIdFromHexError;
+pub use types::SortOrder;
 
 /// Converts a [`types::CommitId`] to its conventional 7-character hex
 /// abbreviation.

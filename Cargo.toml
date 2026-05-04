@@ -1,9 +1,9 @@
 [package]
 name = "endringer"
-version = "0.8.1"
+version = "0.9.0"
 edition = "2024"
 
-description = "A lean Lib for VCS repository introspection."
+description = "A lean library for VCS repository introspection."
 authors = ["nabbisen"]
 license = "Apache-2.0"
 

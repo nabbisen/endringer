@@ -9,16 +9,37 @@ use std::time::SystemTime;
 ///
 /// # Example
 ///
-/// ```
-/// # use endringer::types::CommitId;
-/// // Full hex representation is available via the Display trait.
-/// // Seven-character abbreviation:
-/// // let short = commit_id.short();   // e.g. "a1b2c3d"
+/// ```no_run
+/// use endringer::types::CommitId;
+///
+/// let id = CommitId::from_hex("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2").unwrap();
+/// assert_eq!(id.short().len(), 7);
+/// println!("{id}");   // full 40-char hex
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CommitId(pub(crate) gix::ObjectId);
 
 impl CommitId {
+    /// Constructs a `CommitId` from a 40-character lowercase hex string.
+    ///
+    /// Returns an error if the string is not exactly 40 valid hex characters.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use endringer::types::CommitId;
+    /// let id = CommitId::from_hex("0000000000000000000000000000000000000000").unwrap();
+    /// assert_eq!(id.short(), "0000000");
+    ///
+    /// assert!(CommitId::from_hex("not-a-hash").is_err());
+    /// assert!(CommitId::from_hex("abc123").is_err());  // too short
+    /// ```
+    pub fn from_hex(hex: &str) -> Result<Self, CommitIdFromHexError> {
+        gix::ObjectId::from_hex(hex.as_bytes())
+            .map(CommitId)
+            .map_err(|_| CommitIdFromHexError(hex.to_owned()))
+    }
+
     /// Returns the first 7 hex characters of the commit ID — the conventional
     /// "short" form used in log output and tag descriptions.
     pub fn short(&self) -> String {
@@ -41,6 +62,22 @@ impl std::fmt::Display for CommitId {
         write!(f, "{}", self.0)
     }
 }
+
+/// Error returned when [`CommitId::from_hex`] receives an invalid hex string.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommitIdFromHexError(String);
+
+impl std::fmt::Display for CommitIdFromHexError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "invalid commit id {:?}: expected 40 lowercase hex characters",
+            self.0
+        )
+    }
+}
+
+impl std::error::Error for CommitIdFromHexError {}
 
 /// Information about a branch (local or remote).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -108,4 +145,19 @@ pub struct TagInfo {
     pub commit_summary: String,
     /// Committer timestamp of the tagged commit.
     pub commit_timestamp: SystemTime,
+}
+
+/// Sort order for [`Repository::list_commits`] and [`Repository::list_tags`].
+///
+/// The default ordering for both methods is the order returned by the
+/// underlying ref store, which is not guaranteed to be stable.  Pass a
+/// `SortOrder` variant to request a deterministic ordering.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SortOrder {
+    /// Newest commit / most-recently-tagged first (descending timestamp).
+    NewestFirst,
+    /// Oldest commit / earliest-tagged first (ascending timestamp).
+    OldestFirst,
+    /// Alphabetical order by tag name or commit summary (ascending).
+    ByName,
 }

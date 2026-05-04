@@ -56,42 +56,23 @@ cargo publish
 | [v0.7.1] | 2025 | 初回公開。ブランチ一覧・コミット履歴・ステータスダイジェスト |
 | [v0.8.0] | 2026-05-04 | `CommitId` newtype、タグ操作、`log_since`、公開 API の整合 |
 | [v0.8.1] | 2026-05-04 | バグ修正（repo_name・current_branch・timestamp 型安全性・author 一貫性）、derive 整合、tarball 命名変更 |
+| [v0.9.0] | 2026-05-04 | `CommitId::from_hex`、`SortOrder`、`list_commits_sorted`、`list_tags_sorted`、annotated タグ |
 
 ---
 
-## v0.9.0（次期リリース）
+## v0.9.0 ✅ リリース済み（2026-05-04）
 
-### Annotated タグのサポート
+### Annotated タグのサポート ✅
 
-`create_tag` は現在、軽量タグのみを作成します。
-リリースワークフローで一般的な annotated タグ（タッガー・メッセージ付き）を追加します。
+`create_annotated_tag(name, message)` を追加。tagger identity は git config から自動取得。
 
-```rust
-// 提案 API
-repo.create_annotated_tag("v1.0.0", "Release v1.0.0")?;
-```
+### `CommitId::from_hex` ✅
 
-### `CommitId::from_hex`
+40文字の hex 文字列から `CommitId` を構築。失敗時は `CommitIdFromHexError` を返す。
 
-既知の SHA-1 hex 文字列から `CommitId` を構築し、履歴をたどらずに特定コミットを参照できるようにします。
+### `list_commits_sorted` / `list_tags_sorted` ✅
 
-```rust
-let id = CommitId::from_hex("a1b2c3d4...")?;
-```
-
-### `list_tags` / `list_commits` のソートオプション
-
-現在は ref ストア順で返します。タイムスタンプ順・名前順の並べ替えオプションを追加します。
-
-```rust
-// 提案 API
-repo.list_commits_sorted(SortOrder::NewestFirst)?;
-repo.list_tags_sorted(SortOrder::ByName)?;
-```
-
-### `CommitId` の `PartialOrd` / `Ord`
-
-コレクション操作（ソート・重複排除）に備えて `Ord` を実装します。
+`SortOrder::NewestFirst`、`OldestFirst`、`ByName` の3種類のソートを実装。
 
 ---
 

@@ -11,6 +11,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.9.0] — 2026-05-04
+
+### Added
+
+- **`CommitId::from_hex(hex: &str)`** — constructs a `CommitId` from a
+  40-character lowercase hex string.  Returns `CommitIdFromHexError` on
+  invalid input.
+- **`CommitIdFromHexError`** — error type for `CommitId::from_hex`, re-exported
+  at the crate root (`endringer::CommitIdFromHexError`).
+- **`types::SortOrder`** — enum with variants `NewestFirst`, `OldestFirst`,
+  `ByName`.  Re-exported at the crate root (`endringer::SortOrder`).
+- **`Repository::list_commits_sorted(order: SortOrder)`** — returns commit
+  history sorted by the given `SortOrder`.
+- **`Repository::list_tags_sorted(order: SortOrder)`** — returns tags sorted by
+  the given `SortOrder`.
+- **`Repository::create_annotated_tag(name, message)`** — creates a full
+  annotated tag object (records tagger identity from git config and current
+  timestamp).
+- 3 new unit tests: annotated tags, `list_commits_sorted`, `CommitId::from_hex`.
+
+---
+
 ## [0.8.1] — 2026-05-04
 
 ### Fixed (post-0.8.0 quality pass)

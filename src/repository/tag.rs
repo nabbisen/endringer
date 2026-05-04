@@ -78,6 +78,49 @@ pub(crate) fn create_tag(repository: &Repository, name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Creates a new **annotated** tag pointing to the current HEAD commit.
+///
+/// The tag object records `message` and derives the tagger identity from the
+/// repository's `user.name` / `user.email` git configuration.  The tagger
+/// timestamp is taken from the system clock at call time.
+///
+/// Returns an error if a tag with `name` already exists, or if the repository
+/// has no configured identity.
+pub(crate) fn create_annotated_tag(
+    repository: &Repository,
+    name: &str,
+    message: &str,
+) -> Result<()> {
+    let head_id = repository
+        .head()?
+        .id()
+        .ok_or_else(|| anyhow::anyhow!("HEAD is not pointing to a commit"))?
+        .detach();
+
+    // Resolve tagger identity from git config (user.name / user.email).
+    let tagger = repository
+        .committer()
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "no committer identity found — set user.name and user.email in git config"
+            )
+        })?
+        .context("failed to resolve committer identity")?;
+
+    repository
+        .tag(
+            name,
+            &head_id,
+            gix::object::Kind::Commit,
+            Some(tagger),
+            message,
+            gix::refs::transaction::PreviousValue::MustNotExist,
+        )
+        .with_context(|| format!("failed to create annotated tag '{}'", name))?;
+
+    Ok(())
+}
+
 /// Deletes the tag with the given `name`.
 ///
 /// Returns an error if no tag with that name exists.
@@ -93,4 +136,23 @@ pub(crate) fn delete_tag(repository: &Repository, name: &str) -> Result<()> {
         .with_context(|| format!("failed to delete tag '{}'", name))?;
 
     Ok(())
+}
+
+/// Returns all tags sorted by `order`.
+pub(crate) fn list_tags_sorted(
+    repository: &Repository,
+    order: crate::types::SortOrder,
+) -> Result<Vec<TagInfo>> {
+    let mut tags = list_tags(repository)?;
+    apply_tag_sort(&mut tags, order);
+    Ok(tags)
+}
+
+fn apply_tag_sort(tags: &mut Vec<TagInfo>, order: crate::types::SortOrder) {
+    use crate::types::SortOrder::*;
+    match order {
+        NewestFirst => tags.sort_by(|a, b| b.commit_timestamp.cmp(&a.commit_timestamp)),
+        OldestFirst => tags.sort_by(|a, b| a.commit_timestamp.cmp(&b.commit_timestamp)),
+        ByName => tags.sort_by(|a, b| a.name.cmp(&b.name)),
+    }
 }

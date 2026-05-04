@@ -10,7 +10,7 @@ use std::time::SystemTime;
 
 use anyhow::{Context, Result};
 
-use crate::types::{BranchInfo, CommitInfo, StatusDigest, TagInfo};
+use crate::types::{BranchInfo, CommitInfo, SortOrder, StatusDigest, TagInfo};
 
 pub(crate) mod branch;
 pub(crate) mod commit;
@@ -56,38 +56,6 @@ impl Repository {
     // Commit queries
     // ------------------------------------------------------------------ //
 
-    /// Returns the full commit history reachable from HEAD, newest first.
-    ///
-    /// For large repositories, prefer [`log_since`][Self::log_since] to
-    /// limit the walk to a specific time window.
-    pub fn list_commits(&self) -> Result<Vec<CommitInfo>> {
-        branch::list_commits(&self.inner)
-    }
-
-    /// Returns commits reachable from HEAD whose **author** timestamp falls
-    /// within `[since, until]` (inclusive on both ends).
-    ///
-    /// The filter uses author time (the timestamp stored on the author
-    /// signature), consistent with `git log`'s default display.  Because Git
-    /// history is a DAG and commit timestamps are author-controlled, every
-    /// ancestor is inspected.  This is correct but `O(n)` in history depth;
-    /// use with reasonably narrow time windows on large repositories.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use std::time::{SystemTime, Duration};
-    /// use endringer::repository::repository;
-    ///
-    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
-    /// let until = SystemTime::now();
-    /// let since = until - Duration::from_secs(7 * 24 * 3600); // last week
-    /// let commits = repo.log_since(since, until).expect("log_since");
-    /// ```
-    pub fn log_since(&self, since: SystemTime, until: SystemTime) -> Result<Vec<CommitInfo>> {
-        branch::log_since(&self.inner, since, until)
-    }
-
     /// Returns a lightweight snapshot of the repository's current state
     /// (branch name, HEAD commit ID, HEAD commit message, timestamp).
     ///
@@ -98,15 +66,67 @@ impl Repository {
     }
 
     // ------------------------------------------------------------------ //
+    // Commit history
+    // ------------------------------------------------------------------ //
+
+    /// Returns the full commit history reachable from HEAD in ref-store order.
+    ///
+    /// Use [`list_commits_sorted`][Self::list_commits_sorted] for a stable
+    /// ordering.
+    pub fn list_commits(&self) -> Result<Vec<CommitInfo>> {
+        branch::list_commits(&self.inner)
+    }
+
+    /// Returns the full commit history reachable from HEAD, sorted by `order`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::{repository::repository, types::SortOrder};
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// let commits = repo.list_commits_sorted(SortOrder::NewestFirst).expect("commits");
+    /// ```
+    pub fn list_commits_sorted(&self, order: SortOrder) -> Result<Vec<CommitInfo>> {
+        branch::list_commits_sorted(&self.inner, order)
+    }
+
+    /// Returns commits reachable from HEAD whose **author** timestamp falls
+    /// within `[since, until]` (inclusive on both ends).
+    ///
+    /// The filter uses author time (the timestamp stored on the author
+    /// signature), consistent with `git log`'s default display.  Because Git
+    /// history is a DAG and commit timestamps are author-controlled, every
+    /// ancestor is inspected.  This is correct but `O(n)` in history depth;
+    /// use with reasonably narrow time windows on large repositories.
+    pub fn log_since(&self, since: SystemTime, until: SystemTime) -> Result<Vec<CommitInfo>> {
+        branch::log_since(&self.inner, since, until)
+    }
+
+    // ------------------------------------------------------------------ //
     // Tag operations
     // ------------------------------------------------------------------ //
 
-    /// Returns metadata for every tag in the repository.
+    /// Returns metadata for every tag in the repository in ref-store order.
     ///
     /// Both lightweight and annotated tags are returned; annotated tag objects
     /// are automatically peeled to their underlying commit.
     pub fn list_tags(&self) -> Result<Vec<TagInfo>> {
         tag::list_tags(&self.inner)
+    }
+
+    /// Returns metadata for every tag, sorted by `order`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::{repository::repository, types::SortOrder};
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// let tags = repo.list_tags_sorted(SortOrder::ByName).expect("tags");
+    /// ```
+    pub fn list_tags_sorted(&self, order: SortOrder) -> Result<Vec<TagInfo>> {
+        tag::list_tags_sorted(&self.inner, order)
     }
 
     /// Creates a new **lightweight** tag pointing to the current HEAD commit.
@@ -123,6 +143,29 @@ impl Repository {
     /// ```
     pub fn create_tag(&self, name: &str) -> Result<()> {
         tag::create_tag(&self.inner, name)
+    }
+
+    /// Creates a new **annotated** tag pointing to the current HEAD commit.
+    ///
+    /// Unlike a lightweight tag (which is simply a ref pointing to a commit),
+    /// an annotated tag is a full Git object that records the tagger's identity
+    /// (from `user.name` / `user.email` in git config), the current timestamp,
+    /// and a `message`.  Annotated tags are the standard choice for release
+    /// milestones.
+    ///
+    /// Returns an error if a tag with `name` already exists, or if the
+    /// repository has no configured user identity.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::repository::repository;
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// repo.create_annotated_tag("v1.0.0", "Release v1.0.0").expect("annotated tag");
+    /// ```
+    pub fn create_annotated_tag(&self, name: &str, message: &str) -> Result<()> {
+        tag::create_annotated_tag(&self.inner, name, message)
     }
 
     /// Deletes the tag with the given `name`.
@@ -298,5 +341,88 @@ mod tests {
         repo.delete_tag(tag_name).expect("delete tag");
         let tags = repo.list_tags().expect("list tags after delete");
         assert!(!tags.iter().any(|t| t.name == tag_name));
+    }
+
+    #[test]
+    fn it_works_create_and_delete_annotated_tag() {
+        let repo = open();
+        let tag_name = "endringer-annotated-test-tag-temp";
+
+        // Clean up in case a previous run left it behind.
+        let _ = repo.delete_tag(tag_name);
+
+        repo.create_annotated_tag(tag_name, "Test annotated tag")
+            .expect("create annotated tag");
+
+        let tags = repo.list_tags().expect("list tags");
+        let found = tags.iter().find(|t| t.name == tag_name);
+        assert!(found.is_some(), "annotated tag must appear in list_tags");
+
+        // Annotated tags are peeled to the commit — all fields must be valid.
+        let t = found.unwrap();
+        assert!(t.full_name.starts_with("refs/tags/"));
+        assert_eq!(t.commit_id.short().len(), 7);
+        assert!(!t.commit_summary.is_empty());
+
+        repo.delete_tag(tag_name).expect("delete annotated tag");
+        let tags = repo.list_tags().expect("list tags after delete");
+        assert!(!tags.iter().any(|t| t.name == tag_name));
+    }
+
+    #[test]
+    fn it_works_list_commits_sorted() {
+        use crate::types::SortOrder;
+
+        let repo = open();
+
+        let newest_first = repo
+            .list_commits_sorted(SortOrder::NewestFirst)
+            .expect("sorted commits NewestFirst");
+        // NewestFirst: each timestamp >= the next.
+        for w in newest_first.windows(2) {
+            assert!(
+                w[0].timestamp >= w[1].timestamp,
+                "NewestFirst order violated"
+            );
+        }
+
+        let oldest_first = repo
+            .list_commits_sorted(SortOrder::OldestFirst)
+            .expect("sorted commits OldestFirst");
+        // OldestFirst: each timestamp <= the next.
+        for w in oldest_first.windows(2) {
+            assert!(
+                w[0].timestamp <= w[1].timestamp,
+                "OldestFirst order violated"
+            );
+        }
+
+        // Sorted sets are the same size and contain the same commit IDs.
+        assert_eq!(newest_first.len(), oldest_first.len());
+        let mut ids_a: Vec<_> = newest_first.iter().map(|c| c.commit_id.clone()).collect();
+        let mut ids_b: Vec<_> = oldest_first.iter().map(|c| c.commit_id.clone()).collect();
+        ids_a.sort_by_key(|id| id.to_string());
+        ids_b.sort_by_key(|id| id.to_string());
+        assert_eq!(ids_a, ids_b, "sorted variants must contain the same commits");
+    }
+
+    #[test]
+    fn it_works_commit_id_from_hex() {
+        use crate::types::CommitId;
+
+        // Round-trip: get a known commit id, convert to hex, parse back.
+        let digest = open().status_digest().expect("status digest");
+        let hex = digest.last_commit_id.to_string();
+        assert_eq!(hex.len(), 40);
+
+        let parsed = CommitId::from_hex(&hex).expect("from_hex round-trip");
+        assert_eq!(parsed, digest.last_commit_id);
+        assert_eq!(parsed.short(), digest.last_commit_id.short());
+
+        // Error cases.
+        assert!(CommitId::from_hex("not-a-hash").is_err());
+        assert!(CommitId::from_hex("abc123").is_err()); // too short
+        assert!(CommitId::from_hex(&"z".repeat(40)).is_err()); // invalid char
+        assert!(CommitId::from_hex(&"0".repeat(39)).is_err()); // 39 chars
     }
 }

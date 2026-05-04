@@ -80,3 +80,22 @@ fn collect_commits(
 
     Ok(history)
 }
+
+/// Returns the full commit history reachable from HEAD, sorted by `order`.
+pub(crate) fn list_commits_sorted(
+    repository: &Repository,
+    order: crate::types::SortOrder,
+) -> Result<Vec<CommitInfo>> {
+    let mut commits = list_commits(repository)?;
+    apply_commit_sort(&mut commits, order);
+    Ok(commits)
+}
+
+fn apply_commit_sort(commits: &mut Vec<CommitInfo>, order: crate::types::SortOrder) {
+    use crate::types::SortOrder::*;
+    match order {
+        NewestFirst => commits.sort_by(|a, b| b.timestamp.cmp(&a.timestamp)),
+        OldestFirst => commits.sort_by(|a, b| a.timestamp.cmp(&b.timestamp)),
+        ByName => commits.sort_by(|a, b| a.summary.cmp(&b.summary)),
+    }
+}
