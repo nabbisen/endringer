@@ -7,6 +7,65 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.17.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **`VcsBackend` gained two new required methods**: `submodules` and
+  `stash_entries`. Custom backend implementations must add these.
+
+  **Migration**: implement both methods. For read-only or non-git backends,
+  both may return `Ok(vec![])`.
+
+### Fixed
+
+- **Content-hash fallback in dirty detection.** When a file's mtime and size
+  both match the index stat cache, the implementation now computes the
+  file's git blob SHA-1 and compares it to the index entry OID.  This
+  correctly detects modifications made within the same clock second without
+  changing the file size — the sole blind spot in the previous heuristic.
+  The fallback uses `gix::hash::hasher` and matches git's own
+  `update-index --refresh` behaviour.
+
+- **Gitignore-aware untracked file detection.** `WorktreeStatus::untracked`
+  and `is_dirty` no longer report files that match active ignore rules
+  (`.gitignore`, `$GIT_DIR/info/exclude`, global excludes). The check uses
+  gix's exclude stack (`Repository::excludes`, enabled via the `excludes`
+  feature already in the default feature set). If the exclude stack cannot
+  be initialised for any reason, the check degrades gracefully and reports
+  all untracked files as before.
+
+### Added
+
+- **`Repository::submodules() -> Result<Vec<SubmoduleInfo>>`** — lists every
+  submodule declared in `.gitmodules`, with `name`, `path`, and `url`.
+  Returns an empty `Vec` when `.gitmodules` is absent. Results are sorted by
+  path. Uses the `gix-submodule` parser (enabled via the new `attributes`
+  gix feature).
+
+- **`Repository::stash_entries() -> Result<Vec<StashEntry>>`** — lists all
+  stash entries newest-first (`stash@{0}` at index 0). Reads the
+  `logs/refs/stash` reflog without spawning the `git` binary. Returns an
+  empty `Vec` when the stash is empty.
+
+- **`SubmoduleInfo`** and **`StashEntry`** types in `endringer-core::types`
+  (re-exported from `endringer`).
+
+- **`AsyncRepository::submodules()`** and **`stash_entries()`** async
+  variants via `spawn_blocking`.
+
+- `tests/git_submodule_stash.rs` — 6 new integration tests for submodules
+  and stash.
+
+- Gitignore test in `tests/git_status.rs`.
+
+### Changed (internal)
+
+- `gix` dependency now enables `attributes` feature in addition to `blame`.
+  This adds `gix-submodule`, `gix-attributes`, and related crates.
+
+---
+
 ## [0.16.0] — 2026-05-04
 
 ### Changed — Breaking

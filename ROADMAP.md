@@ -70,6 +70,7 @@ cargo publish -p endringer-async
 | [v0.14.0] | 2026-05-04 | `GitBackend` lock-free, `CommitInfo.parents`, `is_dirty()`, jj annotated tag `Err`. |
 | [v0.15.0] | 2026-05-04 | Test split (`support/fixture.rs`), `merge_base`, `is_ancestor`, `blame`, `BlameEntry`. |
 | [v0.16.0] | 2026-05-04 | `WorktreeStatus`, `file_at_commit`, recursive tree traversal. |
+| [v0.17.0] | 2026-05-04 | Content-hash dirty fallback, gitignore-aware untracked, `submodules`, `stash_entries`. |
 | [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
@@ -128,28 +129,22 @@ Seven async integration tests in `endringer-async/tests/async_tests.rs`.
 
 ## Planned
 
-### Status heuristic: content-hash fallback
+### Linked worktree listing
 
-The current `worktree_status` / `is_dirty` implementation uses mtime + file
-size as a heuristic. Files modified without changing size within the same
-clock second will not be detected. A future release will add a SHA-1 content
-comparison for entries where mtime and size match (matching git's own
-`update-index` behaviour).
+`Repository::worktrees()` — enumerate linked worktrees (created by
+`git worktree add`) with their paths and current HEAD state.
 
-### Gitignore support for untracked files
+### Tag metadata enrichment
 
-`WorktreeStatus.untracked` currently lists all unindexed files regardless of
-`.gitignore`. A future release will apply gitignore rules via gix's dirwalk API.
+`TagInfo` only exposes the tagged commit's summary and timestamp.  A future
+release may add the tagger name, tagger email, and the tag's own annotation
+message for annotated tags.
 
-### Submodule listing
+### `CommitId: Hash` optimisation
 
-`Repository::submodules()` — enumerate submodule paths and remote URLs without
-running the `git submodule` binary.
-
-### Stash entries
-
-`Repository::stash_entries()` — list stash entries with their commit IDs and
-descriptions.
+The current `Hash` impl delegates to `Vec<u8>` (heap allocation per hash).
+A future release may switch to an inline fixed-size representation for
+performance in large `HashMap<CommitId, _>` use cases.
 
 ---
 
@@ -189,3 +184,4 @@ Readiness criteria:
 [v0.14.0]: https://github.com/nabbisen/endringer/releases/tag/v0.14.0
 [v0.15.0]: https://github.com/nabbisen/endringer/releases/tag/v0.15.0
 [v0.16.0]: https://github.com/nabbisen/endringer/releases/tag/v0.16.0
+[v0.17.0]: https://github.com/nabbisen/endringer/releases/tag/v0.17.0

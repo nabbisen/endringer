@@ -274,3 +274,34 @@ pub struct WorktreeStatus {
     /// Files present in the working tree but not tracked by git.
     pub untracked: Vec<std::path::PathBuf>,
 }
+
+// ── Submodule information ─────────────────────────────────────────────────── //
+
+/// Information about a single Git submodule as declared in `.gitmodules`.
+///
+/// Returned by [`crate::repository::Repository::submodules`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SubmoduleInfo {
+    /// Submodule name as declared in `.gitmodules` (typically the same as `path`).
+    pub name: String,
+    /// Path of the submodule working tree relative to the repository root.
+    pub path: std::path::PathBuf,
+    /// Remote URL the submodule tracks, if configured.
+    pub url: Option<String>,
+}
+
+// ── Stash entries ─────────────────────────────────────────────────────────── //
+
+/// A single entry from the stash, corresponding to `stash@{N}`.
+///
+/// Returned by [`crate::repository::Repository::stash_entries`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StashEntry {
+    /// Zero-based index (`stash@{0}` = 0, `stash@{1}` = 1, …).
+    /// Entries are returned newest-first.
+    pub index: usize,
+    /// OID of the stash commit.
+    pub commit_id: CommitId,
+    /// Stash message (e.g. `"WIP on main: abc1234 initial commit"`).
+    pub message: String,
+}

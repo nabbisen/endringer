@@ -8,7 +8,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 
-use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo, WorktreeStatus};
+use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus};
 
 /// Common interface implemented by every VCS backend.
 ///
@@ -80,4 +80,16 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Returns an error if the path does not exist in that commit's tree.
     fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>>;
+
+    // ── Submodules ─────────────────────────────────────────────────────── //
+
+    /// Returns metadata for all submodules declared in `.gitmodules`.
+    /// Returns an empty `Vec` when no submodules are configured.
+    fn submodules(&self) -> Result<Vec<SubmoduleInfo>>;
+
+    // ── Stash ──────────────────────────────────────────────────────────── //
+
+    /// Returns all stash entries (newest first), or an empty `Vec` if the
+    /// stash is empty.
+    fn stash_entries(&self) -> Result<Vec<StashEntry>>;
 }

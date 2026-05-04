@@ -156,3 +156,29 @@ fn file_at_commit_nested_path() {
         .unwrap();
     assert_eq!(content, b"// helper\n");
 }
+
+// ── gitignore ────────────────────────────────────────────────────────────── //
+
+#[test]
+fn gitignored_file_not_in_untracked() {
+    let f = Fixture::new();
+    // Create a .gitignore that ignores *.log files.
+    std::fs::write(f.path.join(".gitignore"), "*.log\n").unwrap();
+    f.git(&["add", ".gitignore"]);
+    f.git(&["commit", "-m", "add gitignore"]);
+
+    // Write an ignored file and a non-ignored untracked file.
+    std::fs::write(f.path.join("debug.log"), "log content\n").unwrap();
+    std::fs::write(f.path.join("notes.txt"), "some notes\n").unwrap();
+
+    let status = repository(f.path()).unwrap().worktree_status().unwrap();
+
+    assert!(
+        !status.untracked.iter().any(|p| p.ends_with("debug.log")),
+        "ignored file should not appear in untracked: {:?}", status.untracked
+    );
+    assert!(
+        status.untracked.iter().any(|p| p.ends_with("notes.txt")),
+        "non-ignored untracked file should appear: {:?}", status.untracked
+    );
+}

@@ -10,7 +10,9 @@ pub(crate) mod commit;
 pub(crate) mod diff;
 pub(crate) mod tag;
 pub(crate) mod graph;
+pub(crate) mod stash;
 pub(crate) mod status;
+pub(crate) mod submodule;
 pub(crate) mod util;
 
 mod backend;

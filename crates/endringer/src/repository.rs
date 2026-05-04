@@ -7,7 +7,7 @@ use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StatusDigest, TagInfo, WorktreeStatus,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -222,6 +222,22 @@ impl Repository {
         commit_id: &CommitId,
     ) -> Result<Vec<u8>> {
         self.backend.file_at_commit(path, commit_id)
+    }
+
+    // ── Submodules ─────────────────────────────────────────────────────── //
+
+    /// Returns metadata for every submodule declared in `.gitmodules`.
+    /// Returns an empty `Vec` when no `.gitmodules` file is present.
+    pub fn submodules(&self) -> Result<Vec<SubmoduleInfo>> {
+        self.backend.submodules()
+    }
+
+    // ── Stash ──────────────────────────────────────────────────────────── //
+
+    /// Returns all stash entries, newest first (`stash@{0}` first).
+    /// Returns an empty `Vec` when there are no stashed changes.
+    pub fn stash_entries(&self) -> Result<Vec<StashEntry>> {
+        self.backend.stash_entries()
     }
 }
 
