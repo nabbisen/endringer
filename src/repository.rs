@@ -10,10 +10,11 @@ use std::time::SystemTime;
 
 use anyhow::{Context, Result};
 
-use crate::types::{BranchInfo, CommitInfo, SortOrder, StatusDigest, TagInfo};
+use crate::types::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
 
 pub(crate) mod branch;
 pub(crate) mod commit;
+pub(crate) mod diff;
 pub(crate) mod tag;
 
 /// A handle to an open Git repository.
@@ -173,6 +174,100 @@ impl Repository {
     /// Returns an error if no tag with that name exists.
     pub fn delete_tag(&self, name: &str) -> Result<()> {
         tag::delete_tag(&self.inner, name)
+    }
+
+    // ------------------------------------------------------------------ //
+    // Commit lookup
+    // ------------------------------------------------------------------ //
+
+    /// Returns the [`CommitInfo`] for a specific commit by its [`CommitId`].
+    ///
+    /// This is an O(1) object-database lookup; it does **not** walk history.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::{repository::repository, types::CommitId};
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// let id = CommitId::from_hex("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2").unwrap();
+    /// let info = repo.find_commit(&id).expect("find commit");
+    /// println!("{} {}", info.commit_id.short(), info.summary);
+    /// ```
+    pub fn find_commit(&self, id: &CommitId) -> Result<CommitInfo> {
+        let obj = self
+            .inner
+            .find_object(id.0)
+            .with_context(|| format!("commit '{}' not found", id.short()))?;
+        let commit = obj
+            .try_into_commit()
+            .map_err(|_| anyhow::anyhow!("object '{}' is not a commit", id.short()))?;
+
+        let author = commit.author()?;
+        let committer = commit.committer()?;
+        let author_time = author.time().context("failed to read author timestamp")?;
+        let committer_time = committer.time().context("failed to read committer timestamp")?;
+        let message = commit.message()?;
+
+        Ok(CommitInfo {
+            commit_id: id.clone(),
+            author: author.name.to_string(),
+            committer: committer.name.to_string(),
+            summary: message.summary().to_string(),
+            timestamp: crate::util::seconds_to_systemtime(author_time.seconds),
+            committer_timestamp: crate::util::seconds_to_systemtime(committer_time.seconds),
+        })
+    }
+
+    // ------------------------------------------------------------------ //
+    // Diff
+    // ------------------------------------------------------------------ //
+
+    /// Returns a file-level diff summary between two commits.
+    ///
+    /// Classifies each changed path as added, modified, or deleted.
+    /// Patch text is not included.  Renames are reported as a deletion of the
+    /// old path plus an addition of the new path.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::{repository::repository, types::CommitId};
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// let commits = repo.list_commits().expect("list commits");
+    /// if commits.len() >= 2 {
+    ///     let d = repo.diff(&commits[1].commit_id, &commits[0].commit_id).expect("diff");
+    ///     println!("added: {:?}", d.added);
+    /// }
+    /// ```
+    pub fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> {
+        diff::diff(&self.inner, from, to)
+    }
+
+    // ------------------------------------------------------------------ //
+    // Remotes
+    // ------------------------------------------------------------------ //
+
+    /// Returns the fetch URL of the named remote (e.g. `"origin"`), or
+    /// `None` if the remote does not exist or has no fetch URL configured.
+    ///
+    /// This is a pure config read — no network I/O is performed.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use endringer::repository::repository;
+    ///
+    /// let repo = repository(std::path::Path::new(".")).expect("open repo");
+    /// if let Some(url) = repo.remote_url("origin") {
+    ///     println!("origin: {}", url);
+    /// }
+    /// ```
+    pub fn remote_url(&self, name: &str) -> Option<String> {
+        let remote = self.inner.find_remote(name).ok()?;
+        let url = remote.url(gix::remote::Direction::Fetch)?;
+        Some(url.to_bstring().to_string())
     }
 }
 
@@ -424,5 +519,75 @@ mod tests {
         assert!(CommitId::from_hex("abc123").is_err()); // too short
         assert!(CommitId::from_hex(&"z".repeat(40)).is_err()); // invalid char
         assert!(CommitId::from_hex(&"0".repeat(39)).is_err()); // 39 chars
+    }
+
+    #[test]
+    fn it_works_find_commit() {
+        let repo = open();
+        let commits = repo.list_commits().expect("list commits");
+        assert!(!commits.is_empty());
+
+        // find_commit must return the same data as list_commits for a known id.
+        let expected = &commits[0];
+        let found = repo.find_commit(&expected.commit_id).expect("find_commit");
+
+        assert_eq!(found.commit_id, expected.commit_id);
+        assert_eq!(found.author, expected.author);
+        assert_eq!(found.summary, expected.summary);
+        assert_eq!(found.timestamp, expected.timestamp);
+
+        // committer fields must be present and non-empty.
+        assert!(!found.committer.is_empty());
+    }
+
+    #[test]
+    fn it_works_diff() {
+        let repo = open();
+        let commits = repo.list_commits().expect("list commits");
+
+        // Need at least 2 commits to diff.
+        if commits.len() < 2 {
+            return;
+        }
+
+        // Diff parent → child (newest is [0], parent is [1]).
+        let d = repo
+            .diff(&commits[1].commit_id, &commits[0].commit_id)
+            .expect("diff");
+
+        // At least one file must have changed between two different commits.
+        let total = d.added.len() + d.modified.len() + d.deleted.len();
+        assert!(total > 0, "expected at least one file change between commits");
+
+        // Diffing a commit against itself must yield an empty summary.
+        let empty = repo
+            .diff(&commits[0].commit_id, &commits[0].commit_id)
+            .expect("self diff");
+        assert!(empty.added.is_empty());
+        assert!(empty.modified.is_empty());
+        assert!(empty.deleted.is_empty());
+    }
+
+    #[test]
+    fn it_works_remote_url() {
+        let repo = open();
+        // This test repo has no remotes — must return None without error.
+        let url = repo.remote_url("origin");
+        assert!(url.is_none(), "expected no remote in test repo");
+    }
+
+    #[test]
+    fn it_works_commit_info_committer_fields() {
+        let commits = open().list_commits().expect("list commits");
+        assert!(!commits.is_empty());
+        for c in &commits {
+            // In this repo author == committer; both must be non-empty.
+            assert!(!c.author.is_empty());
+            assert!(!c.committer.is_empty());
+            // committer_timestamp must be a plausible timestamp (> 2020).
+            use std::time::{Duration, UNIX_EPOCH};
+            let y2020 = UNIX_EPOCH + Duration::from_secs(1_577_836_800);
+            assert!(c.committer_timestamp >= y2020);
+        }
     }
 }

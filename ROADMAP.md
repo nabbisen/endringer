@@ -57,6 +57,7 @@ cargo publish
 | [v0.8.0] | 2026-05-04 | `CommitId` newtype、タグ操作、`log_since`、公開 API の整合 |
 | [v0.8.1] | 2026-05-04 | バグ修正（repo_name・current_branch・timestamp 型安全性・author 一貫性）、derive 整合、tarball 命名変更 |
 | [v0.9.0] | 2026-05-04 | `CommitId::from_hex`、`SortOrder`、`list_commits_sorted`、`list_tags_sorted`、annotated タグ |
+| [v0.10.0] | 2026-05-04 | `CommitInfo` コミッター情報、`find_commit`、`diff`、`remote_url` |
 
 ---
 
@@ -76,49 +77,25 @@ cargo publish
 
 ---
 
-## v0.10.0
+## v0.10.0 ✅ リリース済み（2026-05-04）
 
-### `CommitInfo` のコミッター情報
+### `CommitInfo` のコミッター情報 ✅
 
-author とは別に committer identity を公開します。
-cherry-pick・rebase 後のコミットで両者が異なる場合の情報取得に対応します。
+`committer: String` と `committer_timestamp: SystemTime` フィールドを追加。
+**Breaking change**: 直接構築コードは更新が必要。
 
-```rust
-pub struct CommitInfo {
-    pub commit_id: CommitId,
-    pub author: String,
-    pub committer: String,          // new
-    pub summary: String,
-    pub timestamp: SystemTime,      // author time
-    pub committer_timestamp: SystemTime,  // new
-}
-```
+### `Repository::find_commit(id)` ✅
 
-### `Repository::find_commit(id)`
+`CommitId` → `CommitInfo` の O(1) オブジェクト DB ルックアップ（履歴走査なし）。
 
-`CommitId` を指定して単一の `CommitInfo` を返します（全履歴の走査なし）。
+### Diff サマリ ✅
 
-```rust
-let info = repo.find_commit(some_id)?;
-```
+`Repository::diff(from, to)` が `DiffSummary { added, modified, deleted }` を返す。
+リネームは delete + add として報告。パッチテキストなし。
 
-### Diff サマリ
+### リモート URL の取得 ✅
 
-2つの `CommitId` 間で変更されたファイルパス（追加・変更・削除）を返します。
-パッチテキストは含みません。
-
-```rust
-let diff = repo.diff(from_id, to_id)?;
-// diff.added, diff.modified, diff.deleted: Vec<PathBuf>
-```
-
-### リモート URL の取得
-
-`origin` など設定済みリモートの URL をネットワーク I/O なしで読み取ります。
-
-```rust
-let url = repo.remote_url("origin")?;
-```
+`Repository::remote_url(name)` が `Option<String>` を返す（ネットワーク I/O なし）。
 
 ---
 

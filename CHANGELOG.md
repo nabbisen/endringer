@@ -11,6 +11,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.10.0] — 2026-05-04
+
+### Added
+
+- **`CommitInfo::committer`** — committer name (distinct from `author` after
+  rebase or cherry-pick).
+- **`CommitInfo::committer_timestamp`** — committer timestamp; matches the
+  `committer` field.
+- **`types::DiffSummary`** — file-level diff result with `added`, `modified`,
+  `deleted: Vec<PathBuf>`.  Re-exported at the crate root
+  (`endringer::DiffSummary`).
+- **`Repository::diff(from, to)`** — returns a `DiffSummary` between two
+  commits.  No patch text; renames reported as delete + add.
+- **`Repository::find_commit(id)`** — O(1) object-database lookup for a single
+  `CommitInfo` by `CommitId`.  Does not walk history.
+- **`Repository::remote_url(name)`** — returns the fetch URL of a named remote
+  (e.g. `"origin"`) as `Option<String>`.  Pure config read; no network I/O.
+- 4 new unit tests: `find_commit`, `diff` (including self-diff), `remote_url`,
+  `CommitInfo` committer fields.
+
+### Changed (Breaking)
+
+- **`CommitInfo`** gains two new fields: `committer: String` and
+  `committer_timestamp: SystemTime`.  Any code constructing `CommitInfo`
+  directly must be updated.
+
+---
+
 ## [0.9.0] — 2026-05-04
 
 ### Added

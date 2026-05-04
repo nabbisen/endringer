@@ -62,7 +62,9 @@ fn collect_commits(
 
         let message = commit.message()?;
         let author = commit.author()?;
+        let committer = commit.committer()?;
         let author_time = author.time().context("failed to read author timestamp")?;
+        let committer_time = committer.time().context("failed to read committer timestamp")?;
 
         let timestamp = seconds_to_systemtime(author_time.seconds);
 
@@ -74,7 +76,9 @@ fn collect_commits(
             commit_id: CommitId(info.id),
             summary: message.summary().to_string(),
             author: author.name.to_string(),
+            committer: committer.name.to_string(),
             timestamp,
+            committer_timestamp: seconds_to_systemtime(committer_time.seconds),
         });
     }
 

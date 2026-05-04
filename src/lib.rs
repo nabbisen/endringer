@@ -44,6 +44,7 @@ pub mod types;
 mod util;
 
 pub use types::CommitIdFromHexError;
+pub use types::DiffSummary;
 pub use types::SortOrder;
 
 /// Converts a [`types::CommitId`] to its conventional 7-character hex

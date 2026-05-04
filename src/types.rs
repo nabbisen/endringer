@@ -120,13 +120,19 @@ pub struct StatusDigest {
 pub struct CommitInfo {
     /// Full SHA-1 commit identifier.
     pub commit_id: CommitId,
-    /// Author name.
+    /// Author name (from the author signature).
     pub author: String,
+    /// Committer name.  Differs from [`author`][Self::author] after
+    /// cherry-pick, rebase, or `--amend`.
+    pub committer: String,
     /// First line of the commit message (subject line).
     pub summary: String,
     /// Author timestamp (matches the [`author`][Self::author] field).
     /// Saturated to [`UNIX_EPOCH`][std::time::UNIX_EPOCH] for pre-1970 values.
     pub timestamp: SystemTime,
+    /// Committer timestamp.  Matches [`committer`][Self::committer].
+    /// Saturated to [`UNIX_EPOCH`][std::time::UNIX_EPOCH] for pre-1970 values.
+    pub committer_timestamp: SystemTime,
 }
 
 /// Information about a lightweight Git tag.
@@ -160,4 +166,21 @@ pub enum SortOrder {
     OldestFirst,
     /// Alphabetical order by tag name or commit summary (ascending).
     ByName,
+}
+
+/// Summary of file-level changes between two commits.
+///
+/// Returned by [`Repository::diff`][crate::repository::Repository::diff].
+/// Patch text is not included — only the paths of affected files.
+///
+/// Rename pairs are represented as a deletion of the old path and an addition
+/// of the new path.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct DiffSummary {
+    /// Paths of files added between `from` and `to`.
+    pub added: Vec<std::path::PathBuf>,
+    /// Paths of files modified between `from` and `to`.
+    pub modified: Vec<std::path::PathBuf>,
+    /// Paths of files deleted between `from` and `to`.
+    pub deleted: Vec<std::path::PathBuf>,
 }
