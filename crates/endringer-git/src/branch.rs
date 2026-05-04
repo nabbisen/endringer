@@ -64,8 +64,17 @@ fn collect_commits(
             continue;
         }
 
+        // Collect parent commit IDs from the ancestry graph entry.
+        let parents: Vec<CommitId> = info
+            .parent_ids
+            .iter()
+            .copied()
+            .map(gix_id_to_commit_id)
+            .collect();
+
         history.push(CommitInfo {
             commit_id: gix_id_to_commit_id(info.id),
+            parents,
             summary: message.summary().to_string(),
             author: author.name.to_string(),
             committer: committer.name.to_string(),
@@ -103,8 +112,14 @@ pub(crate) fn find_commit(repository: &Repository, id: &CommitId) -> Result<Comm
     let committer_time = committer.time().context("committer timestamp")?;
     let message = commit.message()?;
 
+    let parents: Vec<CommitId> = commit
+        .parent_ids()
+        .map(|id| gix_id_to_commit_id(id.detach()))
+        .collect();
+
     Ok(CommitInfo {
         commit_id: id.clone(),
+        parents,
         author: author.name.to_string(),
         committer: committer.name.to_string(),
         summary: message.summary().to_string(),

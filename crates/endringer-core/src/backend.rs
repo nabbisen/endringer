@@ -40,4 +40,12 @@ pub trait VcsBackend: Send + Sync {
 
     // ── Remotes ────────────────────────────────────────────────────────── //
     fn remote_url(&self, name: &str) -> Option<String>;
+
+    // ── Working tree ───────────────────────────────────────────────────── //
+
+    /// Returns `true` if the working tree has any uncommitted changes
+    /// (staged or unstaged).
+    ///
+    /// Bare repositories always return `false` (no working tree).
+    fn is_dirty(&self) -> Result<bool>;
 }

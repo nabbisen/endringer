@@ -90,12 +90,17 @@ impl VcsBackend for JjBackend {
     fn list_tags_sorted(&self, order: SortOrder) -> Result<Vec<TagInfo>> { self.git.list_tags_sorted(order) }
     fn create_tag(&self, name: &str) -> Result<()> { self.git.create_tag(name) }
 
-    /// Creates a lightweight tag (jj does not support annotated tags).
+    /// Always returns an error: Jujutsu does not support annotated tags.
+    ///
+    /// Use [`create_tag`][Self::create_tag] for a lightweight tag instead.
     fn create_annotated_tag(&self, name: &str, _message: &str) -> Result<()> {
-        self.git.create_tag(name)
+        anyhow::bail!(
+            "jj does not support annotated tags;              use create_tag(\"{name}\") for a lightweight tag instead"
+        )
     }
 
     fn delete_tag(&self, name: &str) -> Result<()> { self.git.delete_tag(name) }
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> { self.git.diff(from, to) }
     fn remote_url(&self, name: &str) -> Option<String> { self.git.remote_url(name) }
+    fn is_dirty(&self) -> Result<bool> { self.git.is_dirty() }
 }

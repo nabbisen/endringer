@@ -1,144 +1,174 @@
 # Roadmap
 
-このドキュメントは endringer の今後の開発方針とバージョン計画を示します。
-バージョン番号は [Semantic Versioning](https://semver.org/) に従います。
+This document describes endringer's development direction and version plan.
+Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-## リリース管理方針
+## Release policy
 
-### バージョニングルール
+### Versioning rules
 
-| 変更の種類 | バージョンの上げ方 |
+| Change type | Version bump |
 |---|---|
-| 公開 API の破壊的変更（型・メソッドの削除・シグネチャ変更） | major（ただし v1.0 到達前は minor） |
-| 後方互換の機能追加 | minor |
-| バグ修正・ドキュメント修正・内部リファクタリング | patch |
+| Breaking public API change (type removal, signature change) | major (minor while pre-v1.0) |
+| Usually backward-compatible feature addition | minor |
+| Bug fix, doc fix, internal refactor | patch |
 
-v1.0 到達前（現在）は、minor バージョンアップでも破壊的変更が含まれる場合があります。
-CHANGELOG で `Breaking change:` として明示します。
+Version bumps may include breaking changes.
+These are marked `Breaking change:` in the CHANGELOG.
 
-### タアーボール命名規則
+### Tarball naming
 
 ```
-dist/endringer-{version}.tar.gz   # 例: dist/endringer-0.9.0.tar.gz
+dist/endringer-{version}.tar.gz   # e.g. dist/endringer-0.9.0.tar.gz
 ```
 
-ファイル名に `v` プレフィックスは付与しません。
-git タグは引き続き `v{version}` 形式（例: `v0.9.0`）を使用します。
+The filename has no `v` prefix. Git tags continue to use the `v{version}` form
+(e.g. `v0.9.0`).
 
-### リリース手順
+### Release procedure
 
 ```sh
-# 1. Cargo.toml の version を更新
-# 2. CHANGELOG.md に [x.y.z] セクションを追加
-# 3. ROADMAP.md のリリース履歴を更新
-# 4. テスト・ビルドが通ることを確認
-cargo test --lib
+# 1. Bump version in each crate's Cargo.toml (or workspace Cargo.toml)
+# 2. Add a [x.y.z] section to CHANGELOG.md
+# 3. Update the release history table in ROADMAP.md
+# 4. Verify tests pass and warnings are clean
+cargo test --workspace
 
-# 5. リリーススクリプトを実行
+# 5. Run the release script
 ./scripts/release.sh
 
-# 6. リモートへ push
+# 6. Push to remote
 git push origin master
 git push origin v{version}
 
-# 7. crates.io へ公開（任意）
-cargo publish
+# 7. Publish to crates.io (optional)
+cargo publish -p endringer-core
+cargo publish -p endringer-git
+cargo publish -p endringer-jj
+cargo publish -p endringer
+cargo publish -p endringer-async
 ```
 
 ---
 
-## リリース履歴
+## Release history
 
-| バージョン | リリース日 | 概要 |
+| Version | Date | Summary |
 |---|---|---|
-| [v0.7.1] | 2025 | 初回公開。ブランチ一覧・コミット履歴・ステータスダイジェスト |
-| [v0.8.0] | 2026-05-04 | `CommitId` newtype、タグ操作、`log_since`、公開 API の整合 |
-| [v0.8.1] | 2026-05-04 | バグ修正（repo_name・current_branch・timestamp 型安全性・author 一貫性）、derive 整合、tarball 命名変更 |
-| [v0.9.0] | 2026-05-04 | `CommitId::from_hex`、`SortOrder`、`list_commits_sorted`、`list_tags_sorted`、annotated タグ |
-| [v0.10.0] | 2026-05-04 | `CommitInfo` コミッター情報、`find_commit`、`diff`、`remote_url` |
-| [v0.11.0] | 2026-05-04 | `async` feature flag (`AsyncRepository`)、Jujutsu バックエンド (`JjBackend`)、`VcsBackend` trait |
-| [v0.12.0] | 2026-05-04 | `JjBackend` を gix 直接操作に移行（`jj` バイナリ不要）、テストモジュール分離、CI 安定性改善 |
+| [v0.7.1] | 2025 | Initial public release. Branch listing, commit history, status digest. |
+| [v0.8.0] | 2026-05-04 | `CommitId` newtype, tag operations, `log_since`, public API cleanup. |
+| [v0.8.1] | 2026-05-04 | Bug fixes (repo_name, current_branch, timestamp safety, author consistency), tarball naming. |
+| [v0.9.0] | 2026-05-04 | `CommitId::from_hex`, `SortOrder`, `list_commits_sorted`, `list_tags_sorted`, annotated tags. |
+| [v0.10.0] | 2026-05-04 | `CommitInfo` committer fields, `find_commit`, `diff`, `remote_url`. |
+| [v0.11.0] | 2026-05-04 | `async` feature flag (`AsyncRepository`), Jujutsu backend (`JjBackend`), `VcsBackend` trait. |
+| [v0.12.0] | 2026-05-04 | `JjBackend` rewritten to use gix directly (no `jj` binary), test module separation. |
+| [v0.13.0] | 2026-05-04 | Cargo workspace (5 crates), `CommitId: Ord`, `DiffSummary` ordering, fixture tests, async tests. |
+| [v0.14.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
 
-## v0.9.0 ✅ リリース済み（2026-05-04）
+## v0.14.0 ✅ Released (2026-05-04)
 
-### Annotated タグのサポート ✅
+### Lock-free `GitBackend` ✅
 
-`create_annotated_tag(name, message)` を追加。tagger identity は git config から自動取得。
+Replaced `Mutex<gix::Repository>` with `gix::ThreadSafeRepository`. Each
+method call gets a cheap thread-local view via `.to_thread_local()`, eliminating
+serialization under concurrent async load.
 
-### `CommitId::from_hex` ✅
+### `CommitInfo.parents: Vec<CommitId>` ✅
 
-40文字の hex 文字列から `CommitId` を構築。失敗時は `CommitIdFromHexError` を返す。
+Every `CommitInfo` now carries the commit's direct parent IDs. Enables merge
+detection and graph construction by callers.  
+**Breaking change**: code that constructs `CommitInfo` directly must add `parents`.
 
-### `list_commits_sorted` / `list_tags_sorted` ✅
+### `Repository::is_dirty()` ✅
 
-`SortOrder::NewestFirst`、`OldestFirst`、`ByName` の3種類のソートを実装。
+Returns `true` if the working tree has any uncommitted changes (staged or unstaged).
+Bare repositories always return `false`.
 
----
+### `JjBackend::create_annotated_tag` returns `Err` ✅
 
-## v0.10.0 ✅ リリース済み（2026-05-04）
-
-### `CommitInfo` のコミッター情報 ✅
-
-`committer: String` と `committer_timestamp: SystemTime` フィールドを追加。
-**Breaking change**: 直接構築コードは更新が必要。
-
-### `Repository::find_commit(id)` ✅
-
-`CommitId` → `CommitInfo` の O(1) オブジェクト DB ルックアップ（履歴走査なし）。
-
-### Diff サマリ ✅
-
-`Repository::diff(from, to)` が `DiffSummary { added, modified, deleted }` を返す。
-リネームは delete + add として報告。パッチテキストなし。
-
-### リモート URL の取得 ✅
-
-`Repository::remote_url(name)` が `Option<String>` を返す（ネットワーク I/O なし）。
+Previously fell back silently to a lightweight tag. Now returns an explicit error
+so callers can decide how to handle the limitation.
 
 ---
 
-## v1.0.0（安定 API）
+## v0.13.0 ✅ Released (2026-05-04)
 
-複数の minor バージョンを経て公開 API が安定したと判断したタイミングで v1.0.0 をリリースします。
-v1.0.0 以降は major バージョンなしに破壊的変更を行いません。
+### Cargo workspace ✅
 
-目安となる条件：
+Five-crate workspace: `endringer-core`, `endringer-git`, `endringer-jj`,
+`endringer`, `endringer-async`. The `async` feature flag was removed from
+`endringer`; use the `endringer-async` crate instead.
 
-- `find_commit` / `diff` / annotated タグが揃っている
-- 実際のダウンストリームクレートで 2 バージョン以上の運用実績がある
-- 公開 API に「将来削除したいもの」が残っていない
+### `CommitId: Ord` ✅
 
----
+Byte-level lexicographic ordering. `BTreeSet<CommitId>` and `.sort()` work.
 
-## 長期 / 探索的
+### `DiffSummary` path ordering ✅
 
-### 非同期ファサード（`async` feature flag） ✅ v0.11.0 にて実装済み
+`added`, `modified`, `deleted` paths are sorted ascending within each category.
 
-`tokio::task::spawn_blocking` を用いて非同期コンテキスト向けの `AsyncRepository` を提供。
-`Cargo.toml` に `endringer = { version = "0.11", features = ["async"] }` を追記するだけで有効化。
+### Fixture-based integration tests ✅
 
-### Jujutsu (jj) バックエンド ✅ v0.11.0 にて実装済み
+`tests/integration.rs` creates isolated repositories in `tempfile::TempDir`.
 
-`jj_repository(path)` で Jujutsu リポジトリを開ける。
-`VcsBackend` trait により Git・jj どちらも同一の `Repository` API で操作可能。
-jj バイナリが `$PATH` にあれば動作（`jj-lib` クレート依存なし）。
+### `#[tokio::test]` async tests ✅
+
+Seven async integration tests in `endringer-async/tests/async_tests.rs`.
 
 ---
 
-## 設計上スコープ外
+## Planned
 
-| 項目 | 理由 |
+### Blame / file history
+
+`Repository::blame(path)` returning per-line attribution. Requires gix's blame
+module. Planned for a future minor release.
+
+### Working tree status details
+
+Richer API beyond `is_dirty()`: per-file status (staged, unstaged, untracked).
+Useful for building status bar widgets or pre-commit hooks.
+
+### Commit graph parent traversal helpers
+
+Helper methods on top of `CommitInfo.parents`:
+- `Repository::merge_base(a, b)` — common ancestor
+- `Repository::is_ancestor(candidate, descendant)` — ancestor check
+
+---
+
+## v1.0.0 (stable API)
+
+The v1.0.0 release marks API stability: no breaking changes without a major
+version bump.
+
+Readiness criteria:
+- `find_commit`, `diff`, annotated tags, parents, and `is_dirty` are all stable.
+- At least two downstream crates have used the library across two minor versions.
+- No remaining "wish we'd done this differently" items in the public API.
+
+---
+
+## Out of scope by design
+
+| Item | Reason |
 |---|---|
-| コミット・マージ・プッシュ | endringer は読み取り主体。タグ操作以外の書き込みは対象外 |
-| 設定ファイルの永続化 | アプリケーション層の責務 |
-| UI / i18n | ライブラリの責務ではない |
-| 定期ポーリング | 呼び出し側の責務（例: iced の `Subscription`） |
-| 認証・クレデンシャル管理 | gix を通じて OS クレデンシャルストアに委任 |
+| Commit, merge, push | endringer is read-oriented; only tag writes are in scope. |
+| Config file persistence | Application-layer concern. |
+| UI / i18n | Library responsibility ends at data. |
+| Scheduled polling | Caller's responsibility (e.g. `iced::Subscription`). |
+| Authentication / credential management | Delegated to OS credential store via gix. |
 
-[v0.7.1]: https://github.com/example/endringer/releases/tag/v0.7.1
-[v0.8.0]: https://github.com/example/endringer/releases/tag/v0.8.0
-[v0.8.1]: https://github.com/example/endringer/releases/tag/v0.8.1
+[v0.7.1]: https://github.com/nabbisen/endringer/releases/tag/v0.7.1
+[v0.8.0]: https://github.com/nabbisen/endringer/releases/tag/v0.8.0
+[v0.8.1]: https://github.com/nabbisen/endringer/releases/tag/v0.8.1
+[v0.9.0]: https://github.com/nabbisen/endringer/releases/tag/v0.9.0
+[v0.10.0]: https://github.com/nabbisen/endringer/releases/tag/v0.10.0
+[v0.11.0]: https://github.com/nabbisen/endringer/releases/tag/v0.11.0
+[v0.12.0]: https://github.com/nabbisen/endringer/releases/tag/v0.12.0
+[v0.13.0]: https://github.com/nabbisen/endringer/releases/tag/v0.13.0
+[v0.14.0]: https://github.com/nabbisen/endringer/releases/tag/v0.14.0

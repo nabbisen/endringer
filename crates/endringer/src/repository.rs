@@ -157,6 +157,17 @@ impl Repository {
     pub fn remote_url(&self, name: &str) -> Option<String> {
         self.backend.remote_url(name)
     }
+
+    // ── Working tree ───────────────────────────────────────────────────── //
+
+    /// Returns `true` if the working tree has any uncommitted changes
+    /// (staged or unstaged).
+    ///
+    /// Bare repositories always return `false`. On the jj backend this
+    /// delegates to the underlying git store.
+    pub fn is_dirty(&self) -> Result<bool> {
+        self.backend.is_dirty()
+    }
 }
 
 #[cfg(test)]

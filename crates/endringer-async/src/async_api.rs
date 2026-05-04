@@ -117,4 +117,11 @@ impl AsyncRepository {
             .ok()
             .flatten()
     }
+
+    // ── Working tree ───────────────────────────────────────────────────── //
+
+    pub async fn is_dirty(&self) -> Result<bool> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.is_dirty()).await?
+    }
 }

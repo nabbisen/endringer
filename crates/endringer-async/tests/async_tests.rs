@@ -109,3 +109,16 @@ async fn async_create_and_delete_tag() {
 async fn async_open_invalid_path() {
     assert!(AsyncRepository::open(Path::new("/no/such/repo")).await.is_err());
 }
+
+#[tokio::test]
+async fn async_is_dirty_modified_file() {
+    let f = Fixture::new();
+    let repo = AsyncRepository::open(f.path()).await.unwrap();
+
+    // Initially may or may not be dirty depending on timing; just ensure no panic.
+    let _ = repo.is_dirty().await.unwrap();
+
+    // After modifying a tracked file, must be dirty.
+    std::fs::write(f.path().join("file.txt"), "changed\n").unwrap();
+    assert!(repo.is_dirty().await.unwrap());
+}

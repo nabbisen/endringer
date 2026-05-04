@@ -142,10 +142,15 @@ pub struct StatusDigest {
 }
 
 /// Information about a single commit.
+///
+/// **Breaking change (v0.14)**: a `parents` field was added. Code that
+/// constructs `CommitInfo` directly (outside this library) must be updated.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CommitInfo {
     /// Full commit identifier.
     pub commit_id: CommitId,
+    /// Direct parent commit IDs (empty for the initial commit).
+    pub parents: Vec<CommitId>,
     /// Author name.
     pub author: String,
     /// Committer name. Differs from `author` after cherry-pick, rebase, or amend.
