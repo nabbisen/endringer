@@ -83,10 +83,9 @@ fn it_works_commit_id_ord() {
 }
 
 #[test]
-fn it_works_commit_id_to_short_id() {
+fn it_works_commit_id_short() {
     let digest = open().status_digest().expect("status digest");
-    let short = crate::commit_id_to_short_id(digest.last_commit_id);
-    assert_eq!(short.len(), 7);
+    assert_eq!(digest.last_commit_id.short().len(), 7);
 }
 
 #[test]

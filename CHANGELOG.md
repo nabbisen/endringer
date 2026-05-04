@@ -7,6 +7,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.18.1] — 2026-05-04
+
+### Changed — Breaking
+
+- **`commit_id_to_short_id()` removed.** The function was deprecated in
+  v0.18.0. Use `commit_id.short()` directly.
+
+  **Migration**: replace every call site:
+  ```rust
+  // before
+  let s = endringer::commit_id_to_short_id(id);
+  // after
+  let s = id.short();
+  ```
+
+### Added
+
+- **`README.md` for each sub-crate** (`endringer-core`, `endringer-git`,
+  `endringer-jj`, `endringer-async`), wired via the `readme` field in their
+  `Cargo.toml`. These serve as the crates.io landing page for each crate.
+
+- **Feature-flag architecture analysis in ROADMAP.** Documents the trade-offs
+  of introducing Cargo feature flags to give users finer-grained compile-time
+  control, and records the decision to defer until post-v1.0 — with the
+  exception of potentially gating `gix-blame` behind an opt-in `blame`
+  feature if benchmark evidence justifies it.
+
+---
+
 ## [0.18.0] — 2026-05-04
 
 ### Changed — Breaking

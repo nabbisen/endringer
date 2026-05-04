@@ -1,6 +1,7 @@
 [package]
 name         = "endringer-async"
 description  = "Async facade for endringer (tokio::task::spawn_blocking)."
+readme       = "README.md"
 categories   = ["development-tools", "filesystem", "asynchronous"]
 keywords     = ["git", "jj", "vcs", "repository", "async"]
 version.workspace      = true

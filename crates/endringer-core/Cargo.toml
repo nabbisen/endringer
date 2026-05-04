@@ -1,6 +1,7 @@
 [package]
 name         = "endringer-core"
 description  = "Core types and VCS backend trait for endringer."
+readme       = "README.md"
 version.workspace      = true
 edition.workspace      = true
 authors.workspace      = true

@@ -1,6 +1,7 @@
 [package]
 name         = "endringer-jj"
 description  = "Jujutsu backend for endringer (reads jj's git store via gix)."
+readme       = "README.md"
 version.workspace      = true
 edition.workspace      = true
 authors.workspace      = true

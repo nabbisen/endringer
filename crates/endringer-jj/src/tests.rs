@@ -1,6 +1,6 @@
-use std::path::Path;
-use endringer_core::backend::VcsBackend;
 use super::backend::JjBackend;
+use endringer_core::backend::VcsBackend;
+use std::path::Path;
 
 #[test]
 fn rejects_non_jj_path() {

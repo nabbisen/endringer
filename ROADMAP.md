@@ -149,6 +149,72 @@ changed now while pre-v1.0 minor bumps permit it.
 
 ---
 
+## Feature flag architecture (design consideration)
+
+This section records the analysis of whether to introduce Cargo feature flags
+to give users finer-grained control over what gets compiled.
+
+### Current state
+
+The workspace already separates concerns into five crates:
+
+| Crate | What it adds |
+|---|---|
+| `endringer-core` | Types + `VcsBackend` trait only — minimal |
+| `endringer-git` | Full git backend via gix (~120 transitive deps) |
+| `endringer-jj` | jj support (thin delegation to endringer-git) |
+| `endringer` | Facade with all APIs |
+| `endringer-async` | Optional async wrapper — separate crate already |
+
+A user who only needs commit history can depend directly on `endringer-git`
+instead of `endringer`, keeping the façade's API surface out of scope.
+
+### Proposed groupings for optional feature flags in `endringer`
+
+If we were to add feature flags to the main facade, the natural groups are:
+
+| Feature | Methods covered | Notes |
+|---|---|---|
+| `core` (always on) | `repository()`, `status_digest()`, `backend_kind()` | Cannot be disabled |
+| `branches` | `local_branches()`, `remote_branches()` | Very low cost |
+| `commits` | `list_commits*()`, `log_since()`, `find_commit()` | Needed by most apps |
+| `tags` | `list_tags*()`, `create_tag()`, `delete_tag()`, `create_annotated_tag()` | Often optional |
+| `diff` | `diff()` | Low incremental cost |
+| `graph` | `merge_base()`, `is_ancestor()` | Moderate |
+| `blame` | `blame()` | Heavy — gix-blame required |
+| `worktree` | `is_dirty()`, `worktree_status()`, `file_at_commit()` | Moderate |
+| `metadata` | `submodules()`, `stash_entries()`, `worktrees()` | Moderate |
+
+A `default` feature would bundle `branches + commits + tags + diff + worktree`,
+matching the needs of a typical VCS UI widget.
+
+### Trade-offs
+
+**For feature flags:**
+- Users who only need commit history avoid compiling blame and worktree scanning.
+- `gix-blame` is a meaningful compile-time cost that can be saved.
+
+**Against feature flags:**
+- `VcsBackend` is a public trait: feature-gating methods would break custom
+  backend implementations that are compiled with different feature sets.
+- The complexity of `#[cfg(feature = ...)]` throughout the codebase
+  significantly increases maintenance burden.
+- gix itself is the dominant compile-time cost; our wrapper code is negligible.
+  Saving the wrapper still compiles all of gix.
+
+### Decision
+
+**Defer** feature-gating inside the existing crates for now.  The preferred
+path is:
+1. Keep the workspace as the primary dependency-control mechanism.
+2. Add `gix-blame` behind an optional `blame` feature flag in `endringer-git`
+   if benchmark evidence shows it causes meaningful overhead for non-blame users.
+3. Revisit the full feature-flag scheme post-v1.0 when the API is stable — at
+   that point, adding `#[cfg]` gating would itself be a non-breaking change
+   (turning always-on APIs into opt-in requires a major bump anyway).
+
+---
+
 ## v1.0.0 (stable API)
 
 The v1.0.0 release signals a mature, well-tested public API. Breaking changes

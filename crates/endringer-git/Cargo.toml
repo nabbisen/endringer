@@ -1,6 +1,7 @@
 [package]
 name         = "endringer-git"
 description  = "Git backend for endringer (powered by gix)."
+readme       = "README.md"
 version.workspace      = true
 edition.workspace      = true
 authors.workspace      = true
