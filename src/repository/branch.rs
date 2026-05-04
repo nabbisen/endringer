@@ -1,23 +1,54 @@
-use anyhow::Result;
+use std::time::SystemTime;
+
+use anyhow::{Context, Result};
 use gix::Repository;
 
 use crate::{
-    types::{BranchInfo, CommitInfo},
+    types::{BranchInfo, CommitId, CommitInfo},
     util::seconds_to_systemtime,
 };
 
 mod util;
 
-pub fn local_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    util::branches(&repository, "refs/heads/")
+/// Returns all local branches (`refs/heads/`).
+pub(crate) fn local_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
+    util::branches(repository, "refs/heads/")
 }
 
-pub fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
-    util::branches(&repository, "refs/remotes/")
+/// Returns all remote-tracking branches (`refs/remotes/`).
+pub(crate) fn remote_branches(repository: &Repository) -> Result<Vec<BranchInfo>> {
+    util::branches(repository, "refs/remotes/")
 }
 
-pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
-    // HEAD を取得
+/// Returns the full commit history reachable from HEAD, newest first.
+pub(crate) fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
+    collect_commits(repository, |_| true)
+}
+
+/// Returns commits reachable from HEAD whose **author** timestamp falls within
+/// `[since, until]` (inclusive on both ends).
+///
+/// Note: Git history is a DAG and commit timestamps are author-controlled, so
+/// this function inspects every ancestor rather than short-circuiting.  For
+/// very large repositories consider using a narrow time window.
+pub(crate) fn log_since(
+    repository: &Repository,
+    since: SystemTime,
+    until: SystemTime,
+) -> Result<Vec<CommitInfo>> {
+    collect_commits(repository, |ts| ts >= since && ts <= until)
+}
+
+// ------------------------------------------------------------------ //
+// Internal helpers
+// ------------------------------------------------------------------ //
+
+/// Walks every commit reachable from HEAD and collects those for which
+/// `predicate(timestamp)` returns `true`.
+fn collect_commits(
+    repository: &Repository,
+    predicate: impl Fn(SystemTime) -> bool,
+) -> Result<Vec<CommitInfo>> {
     let head = repository.head()?;
     let head_id = head
         .id()
@@ -25,24 +56,25 @@ pub fn list_commits(repository: &Repository) -> Result<Vec<CommitInfo>> {
 
     let mut history = Vec::new();
 
-    // 履歴を走査
-    let ancestors = head_id.ancestors().all()?;
-
-    for info in ancestors {
+    for info in head_id.ancestors().all()? {
         let info = info?;
         let commit = info.object()?;
 
-        // メッセージと著者情報の取得
         let message = commit.message()?;
         let author = commit.author()?;
+        let author_time = author.time().context("failed to read author timestamp")?;
+
+        let timestamp = seconds_to_systemtime(author_time.seconds);
+
+        if !predicate(timestamp) {
+            continue;
+        }
 
         history.push(CommitInfo {
-            commit_id: info.id, // フルID
+            commit_id: CommitId(info.id),
             summary: message.summary().to_string(),
             author: author.name.to_string(),
-            timestamp: seconds_to_systemtime(
-                commit.time().expect("failed to get commit time").seconds as u64,
-            ),
+            timestamp,
         });
     }
 

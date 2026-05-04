@@ -1,48 +1,60 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use gix::Repository;
 
-use crate::{types::StatusDigest, util::seconds_to_systemtime};
+use crate::{
+    types::{CommitId, StatusDigest},
+    util::seconds_to_systemtime,
+};
 
-pub fn status_digest(repository: &Repository) -> Result<StatusDigest> {
-    // repo name
+/// Builds a [`StatusDigest`] from the repository's current HEAD.
+pub(crate) fn status_digest(repository: &Repository) -> Result<StatusDigest> {
+    // Derive repo name from working directory path.
+    // gix may return a relative path (e.g. ".") when the repository was opened
+    // from a relative path, so we canonicalize to an absolute path first.
     let repo_name = repository
         .workdir()
+        .and_then(|p| p.canonicalize().ok())
+        .as_deref()
         .and_then(|p| p.file_name())
         .and_then(|n| n.to_str())
         .unwrap_or("unknown")
-        .to_string();
+        .to_owned();
 
-    // default branch (HEAD symbolic ref)
+    // Resolve the current branch name from HEAD.
+    // `referent_name()` returns the full ref (e.g. `refs/heads/main`);
+    // `.shorten()` yields the conventional short form (e.g. `main`).
     let mut head = repository.head()?;
     let current_branch = if head.is_detached() {
         "(detached)".to_owned()
     } else {
         head.referent_name()
-            .expect("failed to get referent name")
+            .context("failed to resolve HEAD branch name")?
+            .shorten()
             .to_string()
     };
 
-    // last commit
+    // Peel HEAD to its commit.
     let commit = head.peel_to_commit()?;
-
-    let last_commit_id = commit.id;
+    let last_commit_id = CommitId(commit.id);
 
     let last_commit_summary = commit
         .message()
-        .expect("failed to get message")
+        .context("failed to read HEAD commit message")?
         .summary()
         .to_string();
 
-    let commit_time = {
-        let secs = commit.time().expect("failed to get time").seconds;
-        seconds_to_systemtime(secs as u64)
-    };
+    let last_commit_timestamp = seconds_to_systemtime(
+        commit
+            .time()
+            .context("failed to read HEAD commit timestamp")?
+            .seconds,
+    );
 
     Ok(StatusDigest {
         repo_name,
         current_branch,
         last_commit_id,
         last_commit_summary,
-        last_commit_timestamp: commit_time,
+        last_commit_timestamp,
     })
 }
