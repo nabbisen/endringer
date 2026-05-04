@@ -51,10 +51,26 @@ impl Fixture {
     }
 
     /// Runs a git command inside the fixture directory.
+    /// Runs a `git` command inside the fixture repository.
+    ///
+    /// Environment isolation applied on every call:
+    /// - `GIT_CONFIG_NOSYSTEM=1` — skip `/etc/gitconfig`
+    /// - `GIT_CONFIG_GLOBAL=/dev/null` — skip `~/.gitconfig`; prevents global
+    ///   hooks, `core.editor`, GPG signing, etc. from interfering with tests.
+    /// - `GIT_EDITOR=true` — replace any configured editor with a no-op that
+    ///   exits immediately; prevents test hangs when git would otherwise open
+    ///   an interactive editor (e.g. nvim/vim).
+    /// - `GIT_TERMINAL_PROMPT=0` — suppress credential / terminal prompts.
+    /// - `stdin` disconnected — git cannot read interactive input.
     pub fn git(&self, args: &[&str]) {
         let ok = Command::new("git")
             .args(args)
             .current_dir(&self.path)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_EDITOR", "true")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdin(std::process::Stdio::null())
             .status()
             .expect("git")
             .success();

@@ -7,6 +7,41 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.19.1] — 2026-05-04
+
+### Fixed
+
+- **`cargo test` hangs when a git editor (e.g. neovim) is configured.**
+
+  `Fixture::git()` — the helper used by all integration tests — was running
+  git subprocesses with fully inherited environment and stdin. If the host
+  has `GIT_EDITOR`, `VISUAL`, `EDITOR`, or `core.editor` set to an
+  interactive editor (neovim, vim, …), any git command that consults the
+  editor would open it in the test process's terminal and block indefinitely.
+  In tag tests, this manifested as neovim opening and the test suite
+  hanging; closing neovim without a message body produced
+  `fatal: no tag message?`.
+
+  **Root cause**: missing environment isolation in the fixture git helper.
+
+  **Fix applied to both fixture files**
+  (`crates/endringer/tests/support/fixture.rs` and
+  `crates/endringer-async/tests/async_tests.rs`):
+
+  ```rust
+  .env("GIT_CONFIG_NOSYSTEM", "1")        // skip /etc/gitconfig
+  .env("GIT_CONFIG_GLOBAL", "/dev/null")  // skip ~/.gitconfig (hooks, editor, GPG…)
+  .env("GIT_EDITOR", "true")              // no-op editor — never opens a terminal UI
+  .env("GIT_TERMINAL_PROMPT", "0")        // suppress credential / terminal prompts
+  .stdin(std::process::Stdio::null())     // disconnect from the test process's stdin
+  ```
+
+  With these overrides the fixture subprocesses are fully isolated from the
+  developer's git configuration. All 88 tests now pass in any environment,
+  regardless of the configured git editor.
+
+---
+
 ## [0.19.0] — 2026-05-04
 
 ### Fixed

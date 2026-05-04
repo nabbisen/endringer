@@ -19,7 +19,15 @@ impl Fixture {
 
         let git = |args: &[&str]| {
             assert!(
-                Command::new("git").args(args).current_dir(&path).status().unwrap().success(),
+                Command::new("git")
+                .args(args)
+                .current_dir(&path)
+                .env("GIT_CONFIG_NOSYSTEM", "1")
+                .env("GIT_CONFIG_GLOBAL", "/dev/null")
+                .env("GIT_EDITOR", "true")
+                .env("GIT_TERMINAL_PROMPT", "0")
+                .stdin(std::process::Stdio::null())
+                .status().unwrap().success(),
                 "git {} failed", args.join(" ")
             );
         };
