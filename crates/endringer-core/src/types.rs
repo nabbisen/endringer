@@ -211,3 +211,22 @@ pub enum BackendKind {
     /// Jujutsu (git store read via `gix`).
     Jj,
 }
+
+/// One contiguous span of lines in a file, attributed to a single commit.
+///
+/// Lines are **1-indexed** and inclusive on both ends.
+/// `start_line == end_line` means a single-line entry.
+///
+/// Returned by [`crate::repository::Repository::blame`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BlameEntry {
+    /// Commit that introduced these lines.
+    pub commit_id: CommitId,
+    /// First line in the blamed file (1-indexed, inclusive).
+    pub start_line: u32,
+    /// Last line in the blamed file (1-indexed, inclusive).
+    pub end_line: u32,
+    /// Original file path in the source commit, present only when the file
+    /// was renamed between that commit and the blamed file.
+    pub original_path: Option<std::path::PathBuf>,
+}

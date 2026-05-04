@@ -4,9 +4,9 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
 
-use crate::{branch, commit, diff, status, tag};
+use crate::{blame, branch, commit, diff, graph, status, tag};
 
 /// Git backend.
 ///
@@ -100,5 +100,17 @@ impl VcsBackend for GitBackend {
 
     fn is_dirty(&self) -> Result<bool> {
         status::is_dirty(&repo!(self))
+    }
+
+    fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>> {
+        graph::merge_base(&repo!(self), a, b)
+    }
+
+    fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> {
+        graph::is_ancestor(&repo!(self), candidate, descendant)
+    }
+
+    fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {
+        blame::blame(&repo!(self), path)
     }
 }

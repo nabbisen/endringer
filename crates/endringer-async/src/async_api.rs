@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer::repository::{Repository, jj_repository, repository};
-use endringer::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
 
 /// Async wrapper around [`Repository`].
 ///
@@ -123,5 +123,24 @@ impl AsyncRepository {
     pub async fn is_dirty(&self) -> Result<bool> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.is_dirty()).await?
+    }
+
+    // ── Commit graph ───────────────────────────────────────────────────── //
+
+    pub async fn merge_base(&self, a: CommitId, b: CommitId) -> Result<Option<CommitId>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.merge_base(&a, &b)).await?
+    }
+
+    pub async fn is_ancestor(&self, candidate: CommitId, descendant: CommitId) -> Result<bool> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.is_ancestor(&candidate, &descendant)).await?
+    }
+
+    // ── Blame ──────────────────────────────────────────────────────────── //
+
+    pub async fn blame(&self, path: std::path::PathBuf) -> Result<Vec<BlameEntry>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.blame(&path)).await?
     }
 }

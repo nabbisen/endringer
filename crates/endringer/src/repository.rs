@@ -6,7 +6,8 @@ use std::time::SystemTime;
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
-    BackendKind, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo,
+    BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
+    StatusDigest, TagInfo,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -167,6 +168,31 @@ impl Repository {
     /// delegates to the underlying git store.
     pub fn is_dirty(&self) -> Result<bool> {
         self.backend.is_dirty()
+    }
+
+    // ── Commit graph ───────────────────────────────────────────────────── //
+
+    /// Returns the best common ancestor of `a` and `b`, or `None` if the
+    /// two commits have no shared history.
+    pub fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>> {
+        self.backend.merge_base(a, b)
+    }
+
+    /// Returns `true` if `candidate` is an ancestor (direct or transitive)
+    /// of `descendant`. A commit is its own ancestor.
+    pub fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> {
+        self.backend.is_ancestor(candidate, descendant)
+    }
+
+    // ── Blame ──────────────────────────────────────────────────────────── //
+
+    /// Returns per-line commit attribution for the file at `path` (relative
+    /// to the repository root) as of HEAD.
+    ///
+    /// Entries are in ascending line order. Each [`BlameEntry`] covers a
+    /// contiguous range of lines introduced by the same commit.
+    pub fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {
+        self.backend.blame(path)
     }
 }
 

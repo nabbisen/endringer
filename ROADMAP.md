@@ -12,10 +12,12 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 | Change type | Version bump |
 |---|---|
 | Breaking public API change (type removal, signature change) | major (minor while pre-v1.0) |
-| Usually backward-compatible feature addition | minor |
+| Backward-compatible feature addition | minor |
 | Bug fix, doc fix, internal refactor | patch |
 
-Version bumps may include breaking changes.
+Before v1.0 (current state), minor version bumps may include breaking changes.
+From v1.0 onward, breaking changes in any version require a migration guide
+in the CHANGELOG.
 These are marked `Breaking change:` in the CHANGELOG.
 
 ### Tarball naming
@@ -65,7 +67,9 @@ cargo publish -p endringer-async
 | [v0.11.0] | 2026-05-04 | `async` feature flag (`AsyncRepository`), Jujutsu backend (`JjBackend`), `VcsBackend` trait. |
 | [v0.12.0] | 2026-05-04 | `JjBackend` rewritten to use gix directly (no `jj` binary), test module separation. |
 | [v0.13.0] | 2026-05-04 | Cargo workspace (5 crates), `CommitId: Ord`, `DiffSummary` ordering, fixture tests, async tests. |
-| [v0.14.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
+| [v0.14.0] | 2026-05-04 | `GitBackend` lock-free, `CommitInfo.parents`, `is_dirty()`, jj annotated tag `Err`. |
+| [v0.15.0] | 2026-05-04 | Test split (`support/fixture.rs`), `merge_base`, `is_ancestor`, `blame`, `BlameEntry`. |
+| [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
 
@@ -143,8 +147,10 @@ Helper methods on top of `CommitInfo.parents`:
 
 ## v1.0.0 (stable API)
 
-The v1.0.0 release marks API stability: no breaking changes without a major
-version bump.
+The v1.0.0 release signals a mature, well-tested public API. Breaking changes
+remain possible in any version, but from v1.0 onward every breaking change
+**must** be accompanied by a migration guide in the CHANGELOG that explains
+what changed and how to update calling code.
 
 Readiness criteria:
 - `find_commit`, `diff`, annotated tags, parents, and `is_dirty` are all stable.

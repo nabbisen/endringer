@@ -20,7 +20,7 @@ use std::time::SystemTime;
 
 use anyhow::{Result, bail};
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
 use endringer_git::GitBackend;
 
 /// Jujutsu backend backed by the repository's underlying git object store.
@@ -103,4 +103,7 @@ impl VcsBackend for JjBackend {
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> { self.git.diff(from, to) }
     fn remote_url(&self, name: &str) -> Option<String> { self.git.remote_url(name) }
     fn is_dirty(&self) -> Result<bool> { self.git.is_dirty() }
+    fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>> { self.git.merge_base(a, b) }
+    fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> { self.git.is_ancestor(candidate, descendant) }
+    fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> { self.git.blame(path) }
 }

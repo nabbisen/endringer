@@ -7,6 +7,101 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.15.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **`VcsBackend` gained three new required methods**: `merge_base`, `is_ancestor`,
+  and `blame`. Custom backend implementations must add these methods.
+
+  **Migration**: implement the three new methods on any type that implements
+  `VcsBackend`. See the documentation for default-feasible stubs if the
+  operation is unsupported by your backend.
+
+### Changed
+
+- **`tests/integration.rs` split into seven focused files** under
+  `crates/endringer/tests/`. Each file is an independent test binary covering
+  one concern. A shared `tests/support/fixture.rs` is included via `#[path]`,
+  avoiding `mod.rs` while eliminating duplication.
+
+  | File | Coverage |
+  |---|---|
+  | `git_core.rs` | constructors, status digest, remote URL |
+  | `git_branches.rs` | local and remote branch listing |
+  | `git_commits.rs` | commit listing, sorting, log_since, find, parents, commit-graph |
+  | `git_tags.rs` | tag listing, create/delete (lightweight + annotated) |
+  | `git_diff.rs` | diff between commits, sorted paths |
+  | `git_dirty.rs` | is_dirty scenarios (clean, modified, deleted, staged) |
+  | `git_blame.rs` | per-line blame attribution |
+  | `jj.rs` | jj backend rejection paths |
+
+### Added
+
+- **`Repository::merge_base(a, b) -> Result<Option<CommitId>>`** — best
+  common ancestor via `gix::Repository::merge_base` (same algorithm as
+  `git merge-base`). Returns `None` when the commits have no shared history.
+- **`Repository::is_ancestor(candidate, descendant) -> Result<bool>`** —
+  returns `true` if `candidate` is a direct or transitive ancestor of
+  `descendant`. A commit is its own ancestor. Implemented via `merge_base`.
+- **`Repository::blame(path) -> Result<Vec<BlameEntry>>`** — per-line commit
+  attribution for a file at HEAD. Delegates to `gix::Repository::blame_file`.
+  Requires gix `blame` feature (now enabled in `endringer-git`).
+- **`BlameEntry`** type in `endringer-core::types` (re-exported from
+  `endringer`): `commit_id`, `start_line`, `end_line` (1-indexed inclusive),
+  and `original_path` (set when the file was renamed).
+- **`AsyncRepository::merge_base`**, **`is_ancestor`**, **`blame`** async
+  variants via `spawn_blocking`.
+
+---
+
+## [0.14.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **`CommitInfo.parents: Vec<CommitId>` added.** Every commit now carries its
+  direct parent IDs. Code that constructs `CommitInfo` directly (outside this
+  library) must add `parents: vec![]` (or the real parent IDs).
+
+  **Migration**: add `parents: vec![]` to any `CommitInfo { .. }` struct
+  literal that does not already include the field.
+
+- **`JjBackend::create_annotated_tag` now returns `Err`** instead of silently
+  falling back to a lightweight tag. Callers that need a tag should use
+  `create_tag()`, or explicitly catch and handle the error.
+
+  **Migration**: replace `repo.create_annotated_tag(name, msg)?` with
+  `repo.create_tag(name)?` when targeting jj repositories, or add error
+  handling for the unsupported-operation case.
+
+### Changed
+
+- **`GitBackend` is now lock-free.** The internal `Mutex<gix::Repository>`
+  has been replaced with `gix::ThreadSafeRepository`. Each method call
+  obtains a thread-local view via `to_thread_local()` — no serialization
+  under concurrent async load.
+
+### Added
+
+- **`Repository::is_dirty() -> Result<bool>`** — returns `true` when the
+  working tree has uncommitted changes. Detection uses two passes: the index
+  stat cache (mtime + file size) for unstaged changes, and a blob-OID
+  comparison against the HEAD tree for staged changes. Bare repositories
+  always return `false`.
+- **`AsyncRepository::is_dirty()`** — async variant via `spawn_blocking`.
+- **`CommitInfo.parents: Vec<CommitId>`** — direct parent commit IDs, enabling
+  merge detection and commit-graph traversal by callers.
+- Integration tests for `CommitInfo.parents`, `is_dirty`, and the jj annotated
+  tag error path.
+
+### Fixed
+
+- Dirty check uses both mtime (seconds) **and** file size to catch
+  same-second modifications — matches git's own stat-cache strategy.
+
+---
+
+
 ## [0.13.0] — 2026-05-04
 
 ### Changed — Breaking
@@ -48,6 +143,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+
 ## [0.12.0] — 2026-05-04
 
 ### Changed
@@ -74,6 +170,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `src/jj/parse.rs` — CLI output parser, no longer needed.
 
 ---
+
 
 ## [0.11.0] — 2026-05-04
 
@@ -116,6 +213,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+
 ## [0.10.0] — 2026-05-04
 
 ### Added
@@ -144,6 +242,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+
 ## [0.9.0] — 2026-05-04
 
 ### Added
@@ -165,6 +264,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - 3 new unit tests: annotated tags, `list_commits_sorted`, `CommitId::from_hex`.
 
 ---
+
 
 ## [0.8.1] — 2026-05-04
 
@@ -206,6 +306,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+
 ## [0.8.0] — 2026-05-04
 
 ### Added
@@ -241,6 +342,7 @@ boundary.  Internal submodules were made `pub(crate)` to enforce the intended
 interface contract.
 
 ---
+
 
 ## [0.7.1] — 2025
 

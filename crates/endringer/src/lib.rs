@@ -31,8 +31,8 @@
 //! async facade.
 
 pub use endringer_core::types::{
-    BackendKind, BranchInfo, CommitId, CommitIdFromHexError, CommitInfo, DiffSummary, SortOrder,
-    StatusDigest, TagInfo,
+    BackendKind, BlameEntry, BranchInfo, CommitId, CommitIdFromHexError, CommitInfo, DiffSummary,
+    SortOrder, StatusDigest, TagInfo,
 };
 
 /// The [`VcsBackend`] trait, re-exported for implementing custom backends.

@@ -8,7 +8,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 
-use crate::types::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
+use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo};
 
 /// Common interface implemented by every VCS backend.
 ///
@@ -48,4 +48,22 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Bare repositories always return `false` (no working tree).
     fn is_dirty(&self) -> Result<bool>;
+
+    // ── Commit graph ───────────────────────────────────────────────────── //
+
+    /// Returns the best common ancestor of commits `a` and `b`, or `None`
+    /// if there is no shared history.
+    fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>>;
+
+    /// Returns `true` if `candidate` is a direct or transitive ancestor of
+    /// `descendant` (a commit is considered its own ancestor).
+    fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool>;
+
+    // ── Blame ──────────────────────────────────────────────────────────── //
+
+    /// Returns per-line commit attribution for `path` at HEAD.
+    ///
+    /// `path` must be relative to the repository root.
+    /// Returns [`BlameEntry`] items in line order (ascending `start_line`).
+    fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>>;
 }
