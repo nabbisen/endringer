@@ -1,7 +1,8 @@
 //! # endringer
 //!
-//! Lightweight VCS repository introspection.
-//! Supports **Jujutsu** (via the `jj` CLI) and **Git** (via `gix`).
+//! Lightweight VCS repository introspection library.
+//! Supports **Jujutsu** and **Git**, both via [`gix`] — no external binaries
+//! required.
 //!
 //! ## Quick start (Git)
 //!
@@ -22,6 +23,7 @@
 //!
 //! let repo = jj_repository(Path::new(".")).expect("open jj repo");
 //! let digest = repo.status_digest().expect("status digest");
+//! println!("{} @ {}", digest.current_branch, digest.last_commit_id.short());
 //! ```
 //!
 //! ## Async (requires `async` feature)

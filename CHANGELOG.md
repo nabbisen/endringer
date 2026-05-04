@@ -11,6 +11,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.12.0] — 2026-05-04
+
+### Changed
+
+- **`JjBackend` no longer requires the `jj` binary.** The backend now opens
+  jj's underlying git object store directly with gix. Both co-located
+  (`.git/` + `.jj/`) and native (`.jj/repo/store/git/`) repository layouts
+  are supported. `src/jj/parse.rs` has been removed.
+- **`create_annotated_tag` on the jj backend** falls back to a lightweight tag
+  and ignores the message; this matches jj's own tag model explicitly.
+- Test modules are now in separate `tests.rs` files instead of inline `mod tests`
+  blocks (`src/repository/tests.rs`).
+
+### Added
+
+- Test `it_works_jj_repository_error_on_non_jj_path` verifies that
+  `jj_repository` rejects paths without a `.jj/` directory.
+- `it_works_create_and_delete_annotated_tag` skips gracefully when no git
+  committer identity is configured (avoids false failures in bare CI
+  environments).
+
+### Removed
+
+- `src/jj/parse.rs` — CLI output parser, no longer needed.
+
+---
+
 ## [0.11.0] — 2026-05-04
 
 ### Added

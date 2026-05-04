@@ -59,6 +59,7 @@ cargo publish
 | [v0.9.0] | 2026-05-04 | `CommitId::from_hex`、`SortOrder`、`list_commits_sorted`、`list_tags_sorted`、annotated タグ |
 | [v0.10.0] | 2026-05-04 | `CommitInfo` コミッター情報、`find_commit`、`diff`、`remote_url` |
 | [v0.11.0] | 2026-05-04 | `async` feature flag (`AsyncRepository`)、Jujutsu バックエンド (`JjBackend`)、`VcsBackend` trait |
+| [v0.12.0] | 2026-05-04 | `JjBackend` を gix 直接操作に移行（`jj` バイナリ不要）、テストモジュール分離、CI 安定性改善 |
 
 ---
 

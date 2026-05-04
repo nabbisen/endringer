@@ -1,338 +1,164 @@
-//! Jujutsu (jj) backend — drives the `jj` CLI and parses its output.
+//! Jujutsu (jj) backend — reads jj repositories via gix.
 //!
-//! Jujutsu uses SHA-256 change IDs (64 hex characters) rather than Git's
-//! SHA-1 commit hashes.  `CommitId` transparently supports both widths.
+//! Jujutsu stores its commit history in a git object database. This
+//! implementation opens that git store directly with gix; the `jj` binary is
+//! **not** required.
 //!
-//! # Availability
+//! # Repository layout
 //!
-//! Methods that require write access (`create_tag`, `delete_tag`, …) are
-//! forwarded to the underlying Git repo that jj co-locates with its own
-//! metadata, and will work as long as the repository has a Git backend.
+//! | Mode | Condition | Git store opened |
+//! |------|-----------|-----------------|
+//! | Co-located | `.git/` **and** `.jj/` both present | The project root (same as a plain Git repository) |
+//! | Native jj  | Only `.jj/` present | `.jj/repo/store/git/` (bare repository) |
 //!
-//! # Errors
+//! # Annotated tags
 //!
-//! Every method returns an error if the `jj` binary is not on `$PATH`.
-
-mod parse;
+//! Jujutsu itself only supports lightweight tags. `create_annotated_tag`
+//! creates a lightweight tag and ignores the message argument. This matches
+//! jj's own behaviour and avoids silent data loss.
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::SystemTime;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 
 use crate::{
     backend::VcsBackend,
-    types::{
-        BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest,
-        TagInfo,
-    },
+    git::GitBackend,
+    types::{BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StatusDigest, TagInfo},
 };
 
-/// Jujutsu backend.  All operations delegate to `jj` CLI invocations.
+/// Jujutsu backend backed by the repository's underlying git object store.
+///
+/// All operations delegate to a [`GitBackend`] opened on the jj git store.
 pub(crate) struct JjBackend {
-    /// Root of the repository (the directory that contains `.jj/`).
+    git: GitBackend,
+    /// The user-visible project root (the directory that contains `.jj/`).
+    ///
+    /// Stored separately so that `status_digest` can report the correct
+    /// `repo_name` even when the git store lives under `.jj/repo/store/git`.
     root: PathBuf,
 }
 
 impl JjBackend {
     /// Opens a Jujutsu repository at `path`.
     ///
-    /// Returns an error if `jj` is not on `$PATH` or if `path` does not
-    /// contain a `.jj/` directory.
+    /// Verifies that `path` contains a `.jj/` directory, then locates and
+    /// opens the underlying git object store with gix. The `jj` binary is
+    /// not consulted.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - `path` does not contain a `.jj/` directory.
+    /// - No git backend can be found (neither `.git/` nor `.jj/repo/store/git/`).
+    /// - The git backend cannot be opened by gix.
     pub(crate) fn open(path: &Path) -> Result<Self> {
-        // Verify jj is reachable.
-        jj_version()?;
+        let root = path
+            .canonicalize()
+            .unwrap_or_else(|_| path.to_path_buf());
 
-        // Resolve the actual repo root (jj root prints it).
-        let root = jj_root(path)?;
+        let jj_dir = root.join(".jj");
+        if !jj_dir.is_dir() {
+            bail!(
+                "not a jj repository: no .jj directory at {}",
+                root.display()
+            );
+        }
 
-        Ok(JjBackend { root })
+        // Resolve the git store path.
+        //   1. Co-located: project root has .git/ → open the root itself.
+        //   2. Native jj:  git store lives at .jj/repo/store/git/ (bare repo).
+        let git_store_path = if root.join(".git").exists() {
+            root.clone()
+        } else {
+            let native = jj_dir.join("repo").join("store").join("git");
+            if !native.is_dir() {
+                bail!(
+                    "jj repository at {} has no git backend \
+                     (looked for {} and {})",
+                    root.display(),
+                    root.join(".git").display(),
+                    native.display()
+                );
+            }
+            native
+        };
+
+        let git = GitBackend::open(&git_store_path)?;
+        Ok(JjBackend { git, root })
     }
-}
-
-// ── CLI helpers ──────────────────────────────────────────────────────────── //
-
-/// Checks that `jj` is accessible and returns its version string.
-fn jj_version() -> Result<String> {
-    let out = Command::new("jj")
-        .args(["version"])
-        .output()
-        .context("failed to run 'jj version' — is jj installed and on $PATH?")?;
-
-    if !out.status.success() {
-        bail!("'jj version' exited with status {}", out.status);
-    }
-
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
-}
-
-/// Returns the repository root by running `jj root`.
-fn jj_root(path: &Path) -> Result<PathBuf> {
-    let out = Command::new("jj")
-        .args(["root"])
-        .current_dir(path)
-        .output()
-        .context("failed to run 'jj root'")?;
-
-    if !out.status.success() {
-        bail!(
-            "not a jj repository at {}: {}",
-            path.display(),
-            String::from_utf8_lossy(&out.stderr).trim()
-        );
-    }
-
-    Ok(PathBuf::from(
-        String::from_utf8_lossy(&out.stdout).trim().to_owned(),
-    ))
-}
-
-/// Runs `jj <args>` in the repository root and returns stdout as a String.
-fn jj_run(root: &Path, args: &[&str]) -> Result<String> {
-    let out = Command::new("jj")
-        .args(args)
-        // Disable interactive output; force machine-readable mode.
-        .arg("--no-pager")
-        .current_dir(root)
-        .output()
-        .with_context(|| format!("failed to run 'jj {}'", args.join(" ")))?;
-
-    if !out.status.success() {
-        bail!(
-            "'jj {}' failed: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&out.stderr).trim()
-        );
-    }
-
-    Ok(String::from_utf8_lossy(&out.stdout).to_string())
 }
 
 // ── VcsBackend impl ──────────────────────────────────────────────────────── //
 
 impl VcsBackend for JjBackend {
     fn status_digest(&self) -> Result<StatusDigest> {
-        // `jj log` for the current change (@).
-        // Template fields: change_id, commit_id, description, author.timestamp
-        let raw = jj_run(
-            &self.root,
-            &[
-                "log",
-                "--no-graph",
-                "--revsets=@",
-                "--template",
-                r#"change_id ++ "\t" ++ commit_id ++ "\t" ++ description.first_line() ++ "\t" ++ author.timestamp().format("%s") ++ "\n""#,
-            ],
-        )?;
-
-        let repo_name = self
+        let mut digest = self.git.status_digest()?;
+        // When the git store is a bare repository at .jj/repo/store/git, its
+        // directory name is "git", not the project name. Override repo_name
+        // with the actual project root's directory name.
+        digest.repo_name = self
             .root
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_owned();
-
-        let current_branch = jj_run(&self.root, &["branch", "list", "--revsets=@"])
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .next()
-                    .and_then(|l| l.split(':').next())
-                    .map(str::trim)
-                    .map(str::to_owned)
-            })
-            .unwrap_or_else(|| "@".to_owned());
-
-        let info = parse::log_line(&raw.trim())?;
-
-        Ok(StatusDigest {
-            repo_name,
-            current_branch,
-            last_commit_id: info.commit_id,
-            last_commit_summary: info.summary,
-            last_commit_timestamp: info.timestamp,
-        })
+        Ok(digest)
     }
 
     fn local_branches(&self) -> Result<Vec<BranchInfo>> {
-        let raw = jj_run(
-            &self.root,
-            &[
-                "branch",
-                "list",
-                "--template",
-                r#"name ++ "\t" ++ target.commit_id() ++ "\t" ++ target.description().first_line() ++ "\t" ++ target.author().timestamp().format("%s") ++ "\n""#,
-            ],
-        )?;
-
-        raw.lines()
-            .filter(|l| !l.trim().is_empty())
-            .map(|line| parse::branch_line(line, "refs/heads/"))
-            .collect()
+        self.git.local_branches()
     }
 
     fn remote_branches(&self) -> Result<Vec<BranchInfo>> {
-        // jj remote branches are tracked under `refs/remotes/` in the colocated git repo.
-        let raw = jj_run(
-            &self.root,
-            &[
-                "branch",
-                "list",
-                "--all-remotes",
-                "--template",
-                r#"name ++ "\t" ++ remote ++ "\t" ++ target.commit_id() ++ "\t" ++ target.description().first_line() ++ "\t" ++ target.author().timestamp().format("%s") ++ "\n""#,
-            ],
-        )
-        .unwrap_or_default();
-
-        raw.lines()
-            .filter(|l| !l.trim().is_empty() && l.contains('\t'))
-            .map(|line| parse::remote_branch_line(line))
-            .collect()
+        self.git.remote_branches()
     }
 
     fn list_commits(&self) -> Result<Vec<CommitInfo>> {
-        let raw = jj_run(
-            &self.root,
-            &[
-                "log",
-                "--no-graph",
-                "--revsets=ancestors(@, all())",
-                "--template",
-                r#"commit_id ++ "\t" ++ author.name() ++ "\t" ++ committer.name() ++ "\t" ++ description.first_line() ++ "\t" ++ author.timestamp().format("%s") ++ "\t" ++ committer.timestamp().format("%s") ++ "\n""#,
-            ],
-        )?;
-
-        raw.lines()
-            .filter(|l| !l.trim().is_empty())
-            .map(parse::commit_line)
-            .collect()
+        self.git.list_commits()
     }
 
     fn list_commits_sorted(&self, order: SortOrder) -> Result<Vec<CommitInfo>> {
-        let mut commits = self.list_commits()?;
-        match order {
-            SortOrder::NewestFirst => commits.sort_by(|a, b| b.timestamp.cmp(&a.timestamp)),
-            SortOrder::OldestFirst => commits.sort_by(|a, b| a.timestamp.cmp(&b.timestamp)),
-            SortOrder::ByName => commits.sort_by(|a, b| a.summary.cmp(&b.summary)),
-        }
-        Ok(commits)
+        self.git.list_commits_sorted(order)
     }
 
     fn log_since(&self, since: SystemTime, until: SystemTime) -> Result<Vec<CommitInfo>> {
-        let commits = self.list_commits()?;
-        Ok(commits
-            .into_iter()
-            .filter(|c| c.timestamp >= since && c.timestamp <= until)
-            .collect())
+        self.git.log_since(since, until)
     }
 
     fn find_commit(&self, id: &CommitId) -> Result<CommitInfo> {
-        let raw = jj_run(
-            &self.root,
-            &[
-                "log",
-                "--no-graph",
-                &format!("--revsets={}", id),
-                "--template",
-                r#"commit_id ++ "\t" ++ author.name() ++ "\t" ++ committer.name() ++ "\t" ++ description.first_line() ++ "\t" ++ author.timestamp().format("%s") ++ "\t" ++ committer.timestamp().format("%s") ++ "\n""#,
-            ],
-        )?;
-
-        let line = raw
-            .lines()
-            .find(|l| !l.trim().is_empty())
-            .ok_or_else(|| anyhow::anyhow!("commit '{}' not found", id))?;
-        parse::commit_line(line)
+        self.git.find_commit(id)
     }
 
     fn list_tags(&self) -> Result<Vec<TagInfo>> {
-        let raw = jj_run(
-            &self.root,
-            &[
-                "tag",
-                "list",
-                "--template",
-                r#"name ++ "\t" ++ target.commit_id() ++ "\t" ++ target.description().first_line() ++ "\t" ++ target.author().timestamp().format("%s") ++ "\n""#,
-            ],
-        )
-        .unwrap_or_default();
-
-        raw.lines()
-            .filter(|l| !l.trim().is_empty())
-            .map(|line| parse::tag_line(line))
-            .collect()
+        self.git.list_tags()
     }
 
     fn list_tags_sorted(&self, order: SortOrder) -> Result<Vec<TagInfo>> {
-        let mut tags = self.list_tags()?;
-        match order {
-            SortOrder::NewestFirst => tags.sort_by(|a, b| b.commit_timestamp.cmp(&a.commit_timestamp)),
-            SortOrder::OldestFirst => tags.sort_by(|a, b| a.commit_timestamp.cmp(&b.commit_timestamp)),
-            SortOrder::ByName => tags.sort_by(|a, b| a.name.cmp(&b.name)),
-        }
-        Ok(tags)
+        self.git.list_tags_sorted(order)
     }
 
     fn create_tag(&self, name: &str) -> Result<()> {
-        jj_run(&self.root, &["tag", "create", name, "-r", "@"])?;
-        Ok(())
+        self.git.create_tag(name)
     }
 
+    /// Creates a lightweight tag, ignoring `message`.
+    ///
+    /// Jujutsu only supports lightweight tags; passing a message has no effect.
     fn create_annotated_tag(&self, name: &str, _message: &str) -> Result<()> {
-        // jj only has lightweight tags; create as a regular tag.
-        self.create_tag(name)
+        self.git.create_tag(name)
     }
 
     fn delete_tag(&self, name: &str) -> Result<()> {
-        jj_run(&self.root, &["tag", "delete", name])?;
-        Ok(())
+        self.git.delete_tag(name)
     }
 
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> {
-        let raw = jj_run(
-            &self.root,
-            &[
-                "diff",
-                "--no-pager",
-                "--summary",
-                &format!("--from={}", from),
-                &format!("--to={}", to),
-            ],
-        )?;
-
-        let mut summary = DiffSummary::default();
-        for line in raw.lines() {
-            if let Some(rest) = line.strip_prefix("A ") {
-                summary.added.push(PathBuf::from(rest.trim()));
-            } else if let Some(rest) = line.strip_prefix("M ") {
-                summary.modified.push(PathBuf::from(rest.trim()));
-            } else if let Some(rest) = line.strip_prefix("D ") {
-                summary.deleted.push(PathBuf::from(rest.trim()));
-            } else if let Some(rest) = line.strip_prefix("R ") {
-                // Rename: "R old-path new-path"
-                let mut parts = rest.trim().splitn(2, ' ');
-                if let (Some(old), Some(new)) = (parts.next(), parts.next()) {
-                    summary.deleted.push(PathBuf::from(old));
-                    summary.added.push(PathBuf::from(new));
-                }
-            }
-        }
-
-        Ok(summary)
+        self.git.diff(from, to)
     }
 
     fn remote_url(&self, name: &str) -> Option<String> {
-        let raw = jj_run(&self.root, &["git", "remote", "list"]).ok()?;
-        for line in raw.lines() {
-            // Format: "name  url  (fetch)"
-            let mut parts = line.split_whitespace();
-            if parts.next()? == name {
-                let url = parts.next()?;
-                return Some(url.to_owned());
-            }
-        }
-        None
+        self.git.remote_url(name)
     }
 }
