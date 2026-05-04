@@ -71,6 +71,7 @@ cargo publish -p endringer-async
 | [v0.15.0] | 2026-05-04 | Test split (`support/fixture.rs`), `merge_base`, `is_ancestor`, `blame`, `BlameEntry`. |
 | [v0.16.0] | 2026-05-04 | `WorktreeStatus`, `file_at_commit`, recursive tree traversal. |
 | [v0.17.0] | 2026-05-04 | Content-hash dirty fallback, gitignore-aware untracked, `submodules`, `stash_entries`. |
+| [v0.18.0] | 2026-05-04 | Linked worktrees, `TagAnnotation`, `commit_id_to_short_id` deprecation. |
 | [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
@@ -129,22 +130,22 @@ Seven async integration tests in `endringer-async/tests/async_tests.rs`.
 
 ## Planned
 
-### Linked worktree listing
+### `CommitId` inline storage optimisation
 
-`Repository::worktrees()` — enumerate linked worktrees (created by
-`git worktree add`) with their paths and current HEAD state.
+The current `CommitId(Vec<u8>)` heap-allocates on every clone.  A future
+release may switch to an enum over fixed-size byte arrays
+(`Sha1([u8; 20])` / `Sha256([u8; 32])`) for zero-allocation identity
+comparisons and more compact `HashMap<CommitId, _>` usage.
 
-### Tag metadata enrichment
+### `commit_id_to_short_id` removal
 
-`TagInfo` only exposes the tagged commit's summary and timestamp.  A future
-release may add the tagger name, tagger email, and the tag's own annotation
-message for annotated tags.
+Deprecated in v0.18.0; scheduled for removal at v1.0.0.
 
-### `CommitId: Hash` optimisation
+### API stability review
 
-The current `Hash` impl delegates to `Vec<u8>` (heap allocation per hash).
-A future release may switch to an inline fixed-size representation for
-performance in large `HashMap<CommitId, _>` use cases.
+Before v1.0.0: audit every public type and method for naming consistency and
+completeness. Anything marked "wish we'd done this differently" should be
+changed now while pre-v1.0 minor bumps permit it.
 
 ---
 
@@ -185,3 +186,4 @@ Readiness criteria:
 [v0.15.0]: https://github.com/nabbisen/endringer/releases/tag/v0.15.0
 [v0.16.0]: https://github.com/nabbisen/endringer/releases/tag/v0.16.0
 [v0.17.0]: https://github.com/nabbisen/endringer/releases/tag/v0.17.0
+[v0.18.0]: https://github.com/nabbisen/endringer/releases/tag/v0.18.0

@@ -7,6 +7,49 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.18.0] — 2026-05-04
+
+### Changed — Breaking
+
+- **`TagInfo` gained an `annotation: Option<TagAnnotation>` field.**
+  Lightweight tags have `annotation: None`; annotated tags carry the message,
+  tagger name, and tagger timestamp.
+
+  **Migration**: add `annotation: None` to any `TagInfo { .. }` struct literal
+  you construct directly.
+
+- **`VcsBackend` gained a new required method**: `worktrees`.
+
+  **Migration**: implement `fn worktrees(&self) -> Result<Vec<WorktreeInfo>>`.
+  For backends without linked-worktree support, return `Ok(vec![])`.
+
+### Deprecated
+
+- **`commit_id_to_short_id(id)`** — use `id.short()` directly.
+  The function remains but emits a deprecation warning. It will be removed at
+  or after v1.0.0.
+
+### Added
+
+- **`Repository::worktrees() -> Result<Vec<WorktreeInfo>>`** — lists all
+  linked worktrees (created with `git worktree add`). The main worktree is
+  not included. Results are sorted by worktree id. Each `WorktreeInfo` carries
+  the worktree path, current branch, and lock state.
+
+- **`TagAnnotation`** type — `message`, `tagger_name`, `tagger_timestamp`.
+  Populated for annotated tags created with `git tag -a`.
+
+- **`WorktreeInfo`** type — `id`, `path`, `current_branch`, `is_locked`.
+  Re-exported from `endringer`.
+
+- **`AsyncRepository::worktrees()`** async variant via `spawn_blocking`.
+
+- `tests/git_worktree.rs` — 7 new integration tests covering linked worktrees
+  (empty list, single worktree, multiple sorted) and tag annotations
+  (lightweight has `None`, annotated has message and tagger).
+
+---
+
 ## [0.17.0] — 2026-05-04
 
 ### Changed — Breaking

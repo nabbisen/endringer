@@ -7,7 +7,7 @@ use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -238,6 +238,14 @@ impl Repository {
     /// Returns an empty `Vec` when there are no stashed changes.
     pub fn stash_entries(&self) -> Result<Vec<StashEntry>> {
         self.backend.stash_entries()
+    }
+
+    // ── Linked worktrees ───────────────────────────────────────────────── //
+
+    /// Returns all linked worktrees. The main worktree is not included.
+    /// Returns an empty `Vec` for repositories with no linked worktrees.
+    pub fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
+        self.backend.worktrees()
     }
 }
 

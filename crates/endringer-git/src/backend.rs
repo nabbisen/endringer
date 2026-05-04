@@ -4,9 +4,9 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus};
+use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
 
-use crate::{blame, branch, commit, diff, graph, object, stash, status, submodule, tag};
+use crate::{blame, branch, commit, diff, graph, object, stash, status, submodule, tag, worktree};
 
 /// Git backend.
 ///
@@ -128,5 +128,9 @@ impl VcsBackend for GitBackend {
 
     fn stash_entries(&self) -> Result<Vec<StashEntry>> {
         stash::stash_entries(&repo!(self))
+    }
+
+    fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
+        worktree::worktrees(&repo!(self))
     }
 }

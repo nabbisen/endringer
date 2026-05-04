@@ -14,6 +14,7 @@ pub(crate) mod stash;
 pub(crate) mod status;
 pub(crate) mod submodule;
 pub(crate) mod util;
+pub(crate) mod worktree;
 
 mod backend;
 pub use backend::GitBackend;

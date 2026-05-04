@@ -8,7 +8,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 
-use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus};
+use crate::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
 
 /// Common interface implemented by every VCS backend.
 ///
@@ -92,4 +92,10 @@ pub trait VcsBackend: Send + Sync {
     /// Returns all stash entries (newest first), or an empty `Vec` if the
     /// stash is empty.
     fn stash_entries(&self) -> Result<Vec<StashEntry>>;
+
+    // ── Linked worktrees ───────────────────────────────────────────────── //
+
+    /// Returns all linked worktrees. The main worktree is **not** included.
+    /// Returns an empty `Vec` for repositories with no linked worktrees.
+    fn worktrees(&self) -> Result<Vec<WorktreeInfo>>;
 }

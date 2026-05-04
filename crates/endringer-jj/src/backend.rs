@@ -20,7 +20,7 @@ use std::time::SystemTime;
 
 use anyhow::{Result, bail};
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeStatus};
+use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
 use endringer_git::GitBackend;
 
 /// Jujutsu backend backed by the repository's underlying git object store.
@@ -110,4 +110,5 @@ impl VcsBackend for JjBackend {
     fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>> { self.git.file_at_commit(path, commit_id) }
     fn submodules(&self) -> Result<Vec<SubmoduleInfo>> { self.git.submodules() }
     fn stash_entries(&self) -> Result<Vec<StashEntry>> { self.git.stash_entries() }
+    fn worktrees(&self) -> Result<Vec<WorktreeInfo>> { self.git.worktrees() }
 }

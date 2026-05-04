@@ -163,7 +163,23 @@ pub struct CommitInfo {
     pub committer_timestamp: SystemTime,
 }
 
+/// Annotation data for an annotated tag.
+///
+/// Absent (`TagInfo::annotation` is `None`) for lightweight tags.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TagAnnotation {
+    /// The annotation message (trimmed).
+    pub message: String,
+    /// Tagger name, if recorded in the tag object.
+    pub tagger_name: Option<String>,
+    /// Tagger timestamp, if recorded in the tag object.
+    pub tagger_timestamp: Option<SystemTime>,
+}
+
 /// Information about a tag.
+///
+/// **Breaking change (v0.18)**: an `annotation` field was added.
+/// Code that constructs `TagInfo` directly must add `annotation: None`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TagInfo {
     /// Short tag name, e.g. `v1.0.0`.
@@ -176,6 +192,8 @@ pub struct TagInfo {
     pub commit_summary: String,
     /// Author timestamp of the tagged commit.
     pub commit_timestamp: SystemTime,
+    /// Present for annotated tags; `None` for lightweight tags.
+    pub annotation: Option<TagAnnotation>,
 }
 
 /// Sort order for commit and tag listings.
@@ -304,4 +322,24 @@ pub struct StashEntry {
     pub commit_id: CommitId,
     /// Stash message (e.g. `"WIP on main: abc1234 initial commit"`).
     pub message: String,
+}
+
+// ── Linked worktrees ──────────────────────────────────────────────────────── //
+
+/// Information about a linked git worktree.
+///
+/// Returned by [`crate::repository::Repository::worktrees`]. The main
+/// worktree is **not** included; only linked worktrees created via
+/// `git worktree add` appear here.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorktreeInfo {
+    /// The worktree's identifier (the directory name under `.git/worktrees/`).
+    pub id: String,
+    /// Absolute path to the worktree's working directory.
+    pub path: std::path::PathBuf,
+    /// Currently checked-out branch (short name), or `"(detached)"` when
+    /// the HEAD is in a detached state.
+    pub current_branch: String,
+    /// Whether the worktree is locked (`git worktree lock`).
+    pub is_locked: bool,
 }

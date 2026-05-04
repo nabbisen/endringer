@@ -32,8 +32,8 @@
 
 pub use endringer_core::types::{
     BackendKind, BlameEntry, BranchInfo, ChangeKind, CommitId, CommitIdFromHexError, CommitInfo,
-    DiffSummary, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagInfo,
-    WorktreeStatus,
+    DiffSummary, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation,
+    TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
 /// The [`VcsBackend`] trait, re-exported for implementing custom backends.
@@ -45,7 +45,17 @@ pub mod repository;
 
 /// Converts a [`CommitId`] to its 7-character hex abbreviation.
 ///
-/// Convenience wrapper around [`CommitId::short`].
+/// # Deprecation
+///
+/// Call [`CommitId::short`] directly instead:
+///
+/// ```
+/// # use endringer::CommitId;
+/// # let id = CommitId::from_hex("0000000000000000000000000000000000000000").unwrap();
+/// let short = id.short(); // preferred
+/// ```
+#[deprecated(since = "0.18.0", note = "use `commit_id.short()` directly")]
+#[allow(dead_code)]
 pub fn commit_id_to_short_id(commit_id: CommitId) -> String {
     commit_id.short()
 }
