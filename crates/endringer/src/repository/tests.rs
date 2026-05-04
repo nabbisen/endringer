@@ -1,7 +1,6 @@
 //! Unit tests for the repository module (run against the workspace git repo).
 
 use std::path::Path;
-use std::time::{Duration, SystemTime};
 
 use super::*;
 
@@ -90,5 +89,6 @@ fn it_works_commit_id_short() {
 
 #[test]
 fn it_works_remote_url() {
-    assert!(open().remote_url("origin").is_none());
+    // Use a remote name that cannot exist in any environment.
+    assert!(open().remote_url("__endringer_test_nonexistent__").is_none());
 }

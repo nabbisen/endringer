@@ -72,6 +72,8 @@ cargo publish -p endringer-async
 | [v0.16.0] | 2026-05-04 | `WorktreeStatus`, `file_at_commit`, recursive tree traversal. |
 | [v0.17.0] | 2026-05-04 | Content-hash dirty fallback, gitignore-aware untracked, `submodules`, `stash_entries`. |
 | [v0.18.0] | 2026-05-04 | Linked worktrees, `TagAnnotation`, `commit_id_to_short_id` deprecation. |
+| [v0.18.1] | 2026-05-04 | Remove deprecated `commit_id_to_short_id`, crate READMEs, feature flag analysis. |
+| [v0.19.0] | 2026-05-04 | Bug fixes, README restructure, full docs/ site, codebase audit in ROADMAP. |
 | [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
 
 ---
@@ -146,6 +148,44 @@ Deprecated in v0.18.0; scheduled for removal at v1.0.0.
 Before v1.0.0: audit every public type and method for naming consistency and
 completeness. Anything marked "wish we'd done this differently" should be
 changed now while pre-v1.0 minor bumps permit it.
+
+---
+
+## Codebase audit (v0.19.0 findings)
+
+This is a snapshot audit from v0.19.0. Items flagged here are candidates for
+a dedicated v1.0-prep refactor phase.
+
+### API naming inconsistencies
+
+| Item | Issue | Proposed fix |
+|---|---|---|
+| `CommitInfo::timestamp` | Author timestamp; the paired field is `committer_timestamp`. Asymmetric: one is named by *what* it is, the other by *whose* it is. | Rename to `author_timestamp` (breaking). |
+| `BranchInfo::last_commit_*` fields | "last" is ambiguous (last in time? last in order?). Means "tip commit". | Rename to `tip_commit_*` (breaking). |
+| `StatusDigest::last_commit_*` fields | Same as above. | Rename to `head_commit_*` (breaking). |
+| `VcsBackend` method count (22) | Growing; no default impls. Custom backends must implement all 22 methods. | Add `default fn` impls for less-common methods (`worktrees`, `stash_entries`, `submodules`) that return `Ok(vec![])`. Non-breaking. |
+
+### File-size observations
+
+| File | Lines | Notes |
+|---|---|---|
+| `endringer-core/src/types.rs` | ~320 | Accumulating types; consider splitting into `types/commit.rs`, `types/status.rs`, etc. — but wait until v1.0 stabilises the type set. |
+| `endringer/src/repository.rs` | ~250 | Delegation boilerplate; no structural concern. |
+| `endringer-async/src/async_api.rs` | ~200 | Mirrors `repository.rs`; both grow together. Acceptable. |
+| `crates/endringer-git/src/status.rs` | ~165 | Contains `is_dirty`, `worktree_status`, and helpers. Could split off `worktree_status` into its own module if it grows further. |
+
+### docs/README.md (legacy)
+
+The file `docs/README.md` is a single-file Japanese developer document from
+the early single-crate era. It was superseded by `docs/src/` in v0.19.0.
+The file should be removed in the next housekeeping pass.
+
+### Deferred items (no action required now)
+
+- `CommitId` inline storage (enum over `[u8; 20]` / `[u8; 32]`) — noted in
+  Planned section; defer until post-v1.0.
+- Feature flag scheme — analysed above; defer until post-v1.0.
+- `commit_id_to_short_id` — already removed in v0.18.1.
 
 ---
 
@@ -253,3 +293,4 @@ Readiness criteria:
 [v0.16.0]: https://github.com/nabbisen/endringer/releases/tag/v0.16.0
 [v0.17.0]: https://github.com/nabbisen/endringer/releases/tag/v0.17.0
 [v0.18.0]: https://github.com/nabbisen/endringer/releases/tag/v0.18.0
+[v0.19.0]: https://github.com/nabbisen/endringer/releases/tag/v0.19.0

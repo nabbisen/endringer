@@ -7,6 +7,45 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.19.0] — 2026-05-04
+
+### Fixed
+
+- **`it_works_remote_url` test was environment-dependent.** The assertion
+  `remote_url("origin").is_none()` fails in any environment where the
+  workspace git repo has an origin remote. Changed to use a name that cannot
+  exist in any git repository (`__endringer_test_nonexistent__`).
+- **Unused imports** `Duration` and `SystemTime` in
+  `crates/endringer/src/repository/tests.rs` removed.
+- **Unused import** `endringer_core::backend::VcsBackend` in
+  `crates/endringer-jj/src/tests.rs` removed.
+
+### Documentation
+
+- **README.md** fully rewritten to follow the structured format:
+  Hero → Overview → Why/When → Quick Start → Design Notes → Docs link.
+  API reference table removed (moved to `docs/`). No licence prose in body.
+
+- **`docs/` created** as an mdbook-ready documentation site organised by
+  reader persona:
+
+  | Persona | Location |
+  |---|---|
+  | First-time users | `docs/src/getting-started/` — introduction, quickstart, FAQ |
+  | Experienced users | `docs/src/reference/` — full API overview, type reference, backend details |
+  | Maintainers / contributors | `docs/src/development/` — philosophy, architecture, contributing guide |
+
+### Added (ROADMAP)
+
+- **Codebase audit findings** documented in ROADMAP: API naming inconsistencies
+  (`timestamp` vs `committer_timestamp`, `last_commit_*`, `head_commit_*`),
+  `VcsBackend` missing default impls, file-size observations, legacy
+  `docs/README.md` removal candidate.
+- **Feature flag architecture analysis** added to ROADMAP: proposed groupings,
+  trade-offs, and the decision to defer until post-v1.0.
+
+---
+
 ## [0.18.1] — 2026-05-04
 
 ### Changed — Breaking

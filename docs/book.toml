@@ -1,0 +1,9 @@
+[book]
+title       = "endringer"
+description = "Lightweight VCS introspection — Git and `jj` (Jujutsu) via gix"
+authors     = ["nabbisen"]
+language    = "en"
+src         = "src"
+
+[output.html]
+git-repository-url = "https://github.com/nabbisen/endringer"

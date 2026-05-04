@@ -1,6 +1,6 @@
 [package]
 name         = "endringer"
-description  = "Lightweight VCS repository introspection — Git and Jujutsu via gix."
+description  = "Lightweight VCS repository introspection — Git and `jj` (Jujutsu) via gix."
 categories   = ["development-tools", "filesystem"]
 keywords     = ["git", "jj", "vcs", "repository"]
 readme       = "../../README.md"
