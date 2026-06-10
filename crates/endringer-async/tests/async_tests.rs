@@ -429,3 +429,30 @@ async fn async_query_commits_truncated_flag() {
     assert_eq!(result.commits.len(), 1);
     assert!(result.truncated, "should be truncated when history is longer than max_count");
 }
+
+// ── RFC 019/020/021: async detail reads ──────────────────────────────────── //
+
+#[tokio::test]
+async fn async_submodule_summaries_no_panic() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let summaries = repo.submodule_summaries().await.unwrap();
+    assert!(summaries.is_empty(), "fixture has no submodules");
+}
+
+#[tokio::test]
+async fn async_stash_detail_empty_stash_returns_err() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    // No stash in the fixture — should return an error, not panic.
+    assert!(repo.stash_detail(0).await.is_err(),
+        "stash_detail on empty stash should return Err");
+}
+
+#[tokio::test]
+async fn async_worktree_details_no_linked_worktrees() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let details = repo.worktree_details().await.unwrap();
+    assert!(details.is_empty(), "fixture has no linked worktrees");
+}

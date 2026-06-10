@@ -6,7 +6,76 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.29.0] — 2026-06-11
+## [0.30.0] — 2026-06-11
+
+This release implements **RFC 019** (submodule detail), **RFC 020** (stash
+detail and diff), **RFC 021** (worktree detail), and **RFC 029** (documentation
+cookbook). It adds 16 new tests (265 total, 0 failures). No breaking changes.
+
+### Added
+
+**RFC 019 — Submodule read model**
+
+- `SubmoduleState` enum: `Registered | Initialized | MissingWorktree | MissingGitDir | Detached | Unknown`.
+- `SubmoduleSummary` struct: `name`, `path`, `url`, `expected_commit_id`,
+  `checked_out_commit_id`, `state`, `is_dirty: Option<bool>` (conservative
+  first version — always `None`; dirty detection deferred).
+- `Repository::submodule_summaries()` (sync + async). Reads `.gitmodules`,
+  resolves gitlink OIDs from the index, and opens each nested repository via
+  `gix::discover`. More expensive than `submodules()`. Sorted by path.
+- New `endringer-git/src/submodule_summary.rs`.
+
+**RFC 020 — Stash detail and diff reads**
+
+- `StashId` struct: `index: usize`.
+- `StashDetail` struct: `id`, `commit_id`, `message`, `author`, `timestamp`,
+  `parents`.
+- `Repository::stash_detail(index)` (sync + async) — detailed metadata for
+  `stash@{index}`. Returns `NotFound` for invalid index.
+- `Repository::stash_diff(index)` (sync + async) — `DiffSummary` of the
+  stash vs its first parent. Reuses the existing `diff()` internals.
+- New `endringer-git/src/stash_detail.rs`.
+
+**RFC 021 — Linked worktree detail**
+
+- `WorktreeState` enum: `Present | MissingPath | MissingGitFile | Prunable | Unknown`.
+- `WorktreeDetail` struct: `id`, `path`, `current_branch`, `head_commit_id`,
+  `is_locked`, `lock_reason`, `state`.
+- `Repository::worktree_details()` (sync + async). Reads `.git/worktrees/`
+  administrative directories. Missing worktrees reported as
+  `WorktreeState::MissingPath` rather than omitted. Sorted by id.
+- New `endringer-git/src/worktree_detail.rs`.
+
+**RFC 029 — Documentation cookbook**
+
+Eight new pages under `docs/src/cookbook/`:
+
+1. `status-widget.md` — status_digest, is_dirty, worktree_status, operation_state
+2. `branch-table.md` — local_branch_tracking, ahead/behind columns
+3. `commit-history-browser.md` — query_commits, diff, file_at_commit, blame_at
+4. `tag-management.md` — list_tags_sorted, create_tag, create_annotated_tag
+5. `jj-repositories.md` — jj_repository, supported reads, git-store view limits
+6. `async-multi-repo-scan.md` — AsyncRepository, Semaphore pattern
+7. `write-then-read-boundary.md` — consumer writes, endringer reads, no invalidation
+8. `custom-backend.md` — VcsBackend implementation, stability note
+
+Cookbook section added to `docs/src/SUMMARY.md`.
+
+**Tests** (16 new):
+
+- `crates/endringer/tests/git_detail_reads.rs` (13 tests): submodule summaries
+  empty/sorted/URL-present; stash detail empty error, metadata, message match,
+  invalid index error, diff summary, diff invalid error; worktree details
+  empty, single linked, sorted, locked with reason.
+- `crates/endringer-async/tests/async_tests.rs` (3 new): submodule summaries,
+  stash detail empty, worktree details empty.
+
+### Changed
+
+- RFC 019, 020, 021, 029 moved from `rfcs/proposed/` to `rfcs/done/`.
+- `docs/src/development/stabilization-dashboard.md` updated to v0.30.0.
+
+---
 
 This release implements **RFC 012** (bounded history queries) and **RFC 024**
 (unusual repository semantics). It adds 22 new tests (249 total, 0 failures).

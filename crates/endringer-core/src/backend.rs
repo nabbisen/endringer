@@ -30,8 +30,9 @@ use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult,
     ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
-    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
-    TreeEntry, WorktreeInfo, WorktreeStatus,
+    RepositoryInfo, SortOrder, StashDetail, StashEntry, StatusDigest,
+    SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
+    WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 
 /// Common interface implemented by every VCS backend.
@@ -296,5 +297,43 @@ pub trait VcsBackend: Send + Sync {
     /// Default: unsupported-feature error.
     fn references_by_kind(&self, _kind: RefKind) -> Result<Vec<RefInfo>> {
         Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "references_by_kind" })
+    }
+
+    // ── Submodule detail (RFC 019) ─────────────────────────────────────── //
+
+    /// Returns rich metadata for each submodule, including initialization
+    /// and sync state. More expensive than [`submodules`][Self::submodules].
+    /// Sorted ascending by path.
+    ///
+    /// Default: unsupported-feature error.
+    fn submodule_summaries(&self) -> Result<Vec<SubmoduleSummary>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "submodule_summaries" })
+    }
+
+    // ── Stash detail (RFC 020) ─────────────────────────────────────────── //
+
+    /// Returns detailed metadata for the stash entry at `index`.
+    ///
+    /// Default: unsupported-feature error.
+    fn stash_detail(&self, _index: usize) -> Result<StashDetail> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "stash_detail" })
+    }
+
+    /// Returns a diff summary for the stash at `index` vs its first parent.
+    ///
+    /// Default: unsupported-feature error.
+    fn stash_diff(&self, _index: usize) -> Result<DiffSummary> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "stash_diff" })
+    }
+
+    // ── Worktree detail (RFC 021) ──────────────────────────────────────── //
+
+    /// Returns rich detail for all linked worktrees, sorted by id.
+    /// Missing worktrees are reported as `WorktreeState::MissingPath` rather
+    /// than omitted.
+    ///
+    /// Default: unsupported-feature error.
+    fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "worktree_details" })
     }
 }

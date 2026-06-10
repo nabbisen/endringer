@@ -635,3 +635,116 @@ pub struct WorktreeInfo {
     /// Whether the worktree is locked (`git worktree lock`).
     pub is_locked: bool,
 }
+
+// ── SubmoduleSummary (RFC 019) ────────────────────────────────────────────── //
+
+/// The operational state of a linked submodule.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SubmoduleState {
+    /// Registered in `.gitmodules` but `git submodule init` has not been run.
+    Registered,
+    /// Initialized and the submodule working tree is present.
+    Initialized,
+    /// The working directory path is absent.
+    MissingWorktree,
+    /// The `.git` file or directory inside the submodule path is absent.
+    MissingGitDir,
+    /// The submodule HEAD is detached.
+    Detached,
+    /// State cannot be determined.
+    Unknown,
+}
+
+/// Rich metadata about a submodule, including initialization and sync state.
+///
+/// Returned by [`crate::backend::VcsBackend::submodule_summaries`].
+/// The cheaper [`crate::backend::VcsBackend::submodules`] method remains
+/// available for simple inventory.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SubmoduleSummary {
+    /// Submodule name from `.gitmodules`.
+    pub name: String,
+    /// Path relative to the repository root.
+    pub path: std::path::PathBuf,
+    /// Remote URL the submodule tracks.
+    pub url: Option<String>,
+    /// The commit OID recorded in the superproject index (the gitlink).
+    pub expected_commit_id: Option<CommitId>,
+    /// The commit OID at the submodule's checked-out HEAD, if accessible.
+    pub checked_out_commit_id: Option<CommitId>,
+    /// Operational state of the submodule.
+    pub state: SubmoduleState,
+    /// Whether the submodule working tree has uncommitted changes.
+    /// `None` when not checked or not applicable.
+    pub is_dirty: Option<bool>,
+}
+
+// ── StashDetail (RFC 020) ─────────────────────────────────────────────────── //
+
+/// A stable identifier for a stash entry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct StashId {
+    /// Zero-based stash index (`stash@{0}` = 0).
+    pub index: usize,
+}
+
+/// Detailed metadata for a single stash entry.
+///
+/// Returned by [`crate::backend::VcsBackend::stash_detail`].
+/// The lighter [`crate::backend::VcsBackend::stash_entries`] method remains
+/// available for list inventory.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StashDetail {
+    /// Stable identifier for this stash entry.
+    pub id: StashId,
+    /// OID of the stash commit.
+    pub commit_id: CommitId,
+    /// Stash message.
+    pub message: String,
+    /// Author name from the stash commit, if available.
+    pub author: Option<String>,
+    /// Author timestamp from the stash commit, if available.
+    pub timestamp: Option<std::time::SystemTime>,
+    /// Parent commit IDs. Typically two: the base commit and the index tree.
+    pub parents: Vec<CommitId>,
+}
+
+// ── WorktreeDetail (RFC 021) ──────────────────────────────────────────────── //
+
+/// The filesystem state of a linked worktree's administrative entry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WorktreeState {
+    /// Working directory exists and `.git` file is present.
+    Present,
+    /// The working directory path does not exist on disk.
+    MissingPath,
+    /// The working directory exists but the `.git` file is absent.
+    MissingGitFile,
+    /// The worktree is prunable (stale administrative entry).
+    Prunable,
+    /// State cannot be determined.
+    Unknown,
+}
+
+/// Rich metadata about a linked worktree.
+///
+/// Returned by [`crate::backend::VcsBackend::worktree_details`].
+/// The simpler [`crate::backend::VcsBackend::worktrees`] method remains
+/// available for concise listing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorktreeDetail {
+    /// Worktree identifier (directory name under `.git/worktrees/`).
+    pub id: String,
+    /// Absolute path to the worktree's working directory.
+    pub path: std::path::PathBuf,
+    /// Currently checked-out branch (short name), or `"(detached)"`.
+    pub current_branch: String,
+    /// HEAD commit OID, if the worktree HEAD can be resolved.
+    pub head_commit_id: Option<CommitId>,
+    /// Whether the worktree is locked.
+    pub is_locked: bool,
+    /// Contents of the lock file, if the worktree is locked.
+    pub lock_reason: Option<String>,
+    /// Filesystem/administrative state of this linked worktree.
+    pub state: WorktreeState,
+}

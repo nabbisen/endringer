@@ -8,9 +8,9 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
     CommitInfo, CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary,
-    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo,
-    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry,
-    WorktreeInfo, WorktreeStatus,
+    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder,
+    StashDetail, StashEntry, StatusDigest, SubmoduleInfo, SubmoduleSummary,
+    TagInfo, TreeEntry, WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -420,6 +420,30 @@ impl Repository {
     /// Returns an empty `Vec` for repositories with no linked worktrees.
     pub fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
         self.backend.worktrees()
+    }
+
+    // ── Rich detail methods (RFC 019/020/021) ─────────────────────────── //
+
+    /// Returns rich metadata for each submodule, including initialization
+    /// and sync state. More expensive than [`submodules`][Self::submodules].
+    pub fn submodule_summaries(&self) -> Result<Vec<SubmoduleSummary>> {
+        self.backend.submodule_summaries()
+    }
+
+    /// Returns detailed metadata for `stash@{index}`.
+    pub fn stash_detail(&self, index: usize) -> Result<StashDetail> {
+        self.backend.stash_detail(index)
+    }
+
+    /// Returns a diff summary for `stash@{index}` vs its first parent.
+    pub fn stash_diff(&self, index: usize) -> Result<DiffSummary> {
+        self.backend.stash_diff(index)
+    }
+
+    /// Returns rich detail for all linked worktrees, sorted by id.
+    /// Missing worktrees are reported with `WorktreeState::MissingPath`.
+    pub fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
+        self.backend.worktree_details()
     }
 }
 

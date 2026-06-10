@@ -30,3 +30,14 @@
 - [Migration: v0.23.0 typed errors](development/migration-v0.23-errors.md)
 - [Release quality gates](development/release-gates.md)
 - [Stabilisation dashboard](development/stabilization-dashboard.md)
+
+## Cookbook
+
+- [Status widget](cookbook/status-widget.md)
+- [Branch table](cookbook/branch-table.md)
+- [Commit history browser](cookbook/commit-history-browser.md)
+- [Tag management](cookbook/tag-management.md)
+- [jj repositories](cookbook/jj-repositories.md)
+- [Async multi-repo scan](cookbook/async-multi-repo-scan.md)
+- [Write-then-read boundary](cookbook/write-then-read-boundary.md)
+- [Custom backend](cookbook/custom-backend.md)

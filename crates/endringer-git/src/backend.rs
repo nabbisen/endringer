@@ -7,12 +7,14 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
-    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashEntry,
-    StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
+    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashDetail, StashEntry,
+    StatusDigest, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
+    WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 
 use crate::{blame, branch, commit, conflict, diff, graph, info, object, operation,
-            refs, stash, status, submodule, tag, tree, worktree};
+            refs, stash, stash_detail, status, submodule, submodule_summary,
+            tag, tree, worktree, worktree_detail};
 
 /// Git backend.
 ///
@@ -242,5 +244,21 @@ impl VcsBackend for GitBackend {
 
     fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> {
         be!(refs::references_by_kind(&repo!(self), kind))
+    }
+
+    fn submodule_summaries(&self) -> Result<Vec<SubmoduleSummary>> {
+        be!(submodule_summary::submodule_summaries(&repo!(self)))
+    }
+
+    fn stash_detail(&self, index: usize) -> Result<StashDetail> {
+        be!(stash_detail::stash_detail(&repo!(self), index))
+    }
+
+    fn stash_diff(&self, index: usize) -> Result<DiffSummary> {
+        be!(stash_detail::stash_diff(&repo!(self), index))
+    }
+
+    fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
+        be!(worktree_detail::worktree_details(&repo!(self)))
     }
 }

@@ -22,15 +22,11 @@ Open for review and discussion. Implementation may not yet have begun.
 | [016](./proposed/016-crate-feature-dependency-policy.md) | Crate, feature, and dependency policy | P2 | v0.28.x |
 | [017](./proposed/017-performance-benchmarking-large-repo-profiling.md) | Performance benchmarking and large-repository profiling | P2 | v0.28.x |
 | [018](./proposed/018-async-api-operational-semantics.md) | Async API operational semantics and cancellation expectations | P2 | v0.28.x |
-| [019](./proposed/019-submodule-read-model.md) | Submodule read model and submodule status summary | P3 | v0.29.x |
-| [020](./proposed/020-stash-detail-and-diff-reads.md) | Stash detail and stash diff reads | P3 | v0.29.x |
-| [021](./proposed/021-worktree-detail-and-safety.md) | Linked worktree detail and safety metadata | P3 | v0.29.x |
 | [023](./proposed/023-object-format-sha256-validation.md) | Object format and SHA-256 repository validation | P2 | v0.28.x |
 | [025](./proposed/025-security-resource-hardening.md) | Security and resource-exhaustion hardening | P2 | v0.29.x |
 | [026](./proposed/026-custom-backend-conformance-kit.md) | Custom backend conformance kit | P3 | v0.30.x |
 | [027](./proposed/027-snapshot-consistency-batch-reads.md) | Snapshot consistency and batch read APIs | P3 | v0.30.x+ |
 | [028](./proposed/028-rename-copy-detection.md) | Rename and copy detection | P3 | v0.30.x+ |
-| [029](./proposed/029-documentation-cookbook-examples.md) | Documentation cookbook and consumer examples | P2 | v0.28.x |
 
 ---
 
@@ -56,6 +52,10 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [030](./done/030-release-quality-gates.md) | Release quality gates and stabilization dashboard | v0.28.0 |
 | [012](./done/012-bounded-history-queries.md) | Bounded history queries | v0.29.0 |
 | [024](./done/024-empty-bare-detached-semantics.md) | Empty, bare, detached, and unusual repository semantics | v0.29.0 |
+| [019](./done/019-submodule-read-model.md) | Submodule read model and status summary | v0.30.0 |
+| [020](./done/020-stash-detail-and-diff-reads.md) | Stash detail and diff reads | v0.30.0 |
+| [021](./done/021-worktree-detail-and-safety.md) | Linked worktree detail and safety metadata | v0.30.0 |
+| [029](./done/029-documentation-cookbook-examples.md) | Documentation cookbook and consumer examples | v0.30.0 |
 
 ---
 

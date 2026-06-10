@@ -10,8 +10,9 @@ use endringer::repository::{Repository, jj_repository, repository};
 use endringer::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
-    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashEntry,
-    StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
+    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashDetail, StashEntry,
+    StatusDigest, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
+    WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 
 /// Maps a tokio `JoinError` to `endringer::Error::TaskJoin`.
@@ -284,5 +285,27 @@ impl AsyncRepository {
     pub async fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.references_by_kind(kind)).await.map_err(join_err)?
+    }
+
+    // ── Rich detail (RFC 019/020/021) ──────────────────────────────────── //
+
+    pub async fn submodule_summaries(&self) -> Result<Vec<SubmoduleSummary>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.submodule_summaries()).await.map_err(join_err)?
+    }
+
+    pub async fn stash_detail(&self, index: usize) -> Result<StashDetail> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.stash_detail(index)).await.map_err(join_err)?
+    }
+
+    pub async fn stash_diff(&self, index: usize) -> Result<DiffSummary> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.stash_diff(index)).await.map_err(join_err)?
+    }
+
+    pub async fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.worktree_details()).await.map_err(join_err)?
     }
 }

@@ -1,6 +1,6 @@
 # RFC 021 — Linked worktree detail and safety metadata
 
-**Status.** Proposed  
+**Status.** Implemented (v0.30.0)  
 **Priority.** P3  
 **Target band.** v0.29.x  
 **Breaking change.** Adds API  

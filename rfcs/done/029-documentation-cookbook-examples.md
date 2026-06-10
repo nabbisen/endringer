@@ -1,6 +1,6 @@
 # RFC 029 — Documentation cookbook and consumer examples
 
-**Status.** Proposed  
+**Status.** Implemented (v0.30.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** No  
