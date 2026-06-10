@@ -29,7 +29,8 @@ use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo,
+    WorktreeStatus,
 };
 
 /// Common interface implemented by every VCS backend.
@@ -235,5 +236,31 @@ pub trait VcsBackend: Send + Sync {
     /// Default: unsupported-feature error.
     fn conflict_summary(&self) -> Result<ConflictSummary> {
         Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "conflict_summary" })
+    }
+
+    // ── Point-in-time reads (RFC 010) ──────────────────────────────────── //
+
+    /// Per-line commit attribution for `path` at `commit_id` (not HEAD).
+    ///
+    /// Default: unsupported-feature error.
+    fn blame_at(&self, _path: &std::path::Path, _commit_id: &CommitId) -> Result<Vec<BlameEntry>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "blame_at" })
+    }
+
+    /// Non-recursive root-level tree listing at `commit_id`, sorted ascending by name.
+    ///
+    /// Default: unsupported-feature error.
+    fn tree_at_commit(&self, _commit_id: &CommitId) -> Result<Vec<TreeEntry>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "tree_at_commit" })
+    }
+
+    /// Non-recursive tree listing of the directory at `path` within `commit_id`.
+    ///
+    /// Returns `Err(PathNotFound)` if `path` does not exist or is not a directory.
+    /// Entries sorted ascending by name.
+    ///
+    /// Default: unsupported-feature error.
+    fn tree_at_path(&self, _commit_id: &CommitId, _path: &std::path::Path) -> Result<Vec<TreeEntry>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "tree_at_path" })
     }
 }

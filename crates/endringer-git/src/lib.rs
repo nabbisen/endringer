@@ -16,6 +16,7 @@ pub(crate) mod operation;
 pub(crate) mod stash;
 pub(crate) mod status;
 pub(crate) mod submodule;
+pub(crate) mod tree;
 pub(crate) mod util;
 pub(crate) mod worktree;
 

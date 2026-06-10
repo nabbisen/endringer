@@ -10,7 +10,8 @@ use endringer::repository::{Repository, jj_repository, repository};
 use endringer::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo,
+    WorktreeStatus,
 };
 
 /// Maps a tokio `JoinError` to `endringer::Error::TaskJoin`.
@@ -244,5 +245,22 @@ impl AsyncRepository {
     pub async fn conflict_summary(&self) -> Result<ConflictSummary> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.conflict_summary()).await.map_err(join_err)?
+    }
+
+    // ── Point-in-time reads ────────────────────────────────────────────── //
+
+    pub async fn blame_at(&self, path: std::path::PathBuf, commit_id: CommitId) -> Result<Vec<BlameEntry>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.blame_at(&path, &commit_id)).await.map_err(join_err)?
+    }
+
+    pub async fn tree_at_commit(&self, commit_id: CommitId) -> Result<Vec<TreeEntry>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.tree_at_commit(&commit_id)).await.map_err(join_err)?
+    }
+
+    pub async fn tree_at_path(&self, commit_id: CommitId, path: std::path::PathBuf) -> Result<Vec<TreeEntry>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.tree_at_path(&commit_id, &path)).await.map_err(join_err)?
     }
 }

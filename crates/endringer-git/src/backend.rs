@@ -7,11 +7,11 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 use crate::{blame, branch, commit, conflict, diff, graph, info, object, operation,
-            stash, status, submodule, tag, worktree};
+            stash, status, submodule, tag, tree, worktree};
 
 /// Git backend.
 ///
@@ -213,5 +213,17 @@ impl VcsBackend for GitBackend {
 
     fn conflict_summary(&self) -> Result<ConflictSummary> {
         be!(conflict::conflict_summary(&repo!(self)))
+    }
+
+    fn blame_at(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<BlameEntry>> {
+        be!(blame::blame_at(&repo!(self), path, commit_id))
+    }
+
+    fn tree_at_commit(&self, commit_id: &CommitId) -> Result<Vec<TreeEntry>> {
+        be!(tree::tree_at_commit(&repo!(self), commit_id))
+    }
+
+    fn tree_at_path(&self, commit_id: &CommitId, path: &std::path::Path) -> Result<Vec<TreeEntry>> {
+        be!(tree::tree_at_path(&repo!(self), commit_id, path))
     }
 }

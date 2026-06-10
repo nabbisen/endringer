@@ -8,8 +8,8 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
     CommitInfo, ConflictSummary, DiffSummary, OperationState, RepositoryInfo,
-    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo,
-    WorktreeStatus,
+    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry,
+    WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -293,6 +293,32 @@ impl Repository {
     /// For a lighter-weight check use [`unmerged_paths`][Self::unmerged_paths].
     pub fn conflict_summary(&self) -> Result<ConflictSummary> {
         self.backend.conflict_summary()
+    }
+
+    // ── Point-in-time reads ────────────────────────────────────────────── //
+
+    /// Returns per-line commit attribution for `path` at `commit_id`.
+    ///
+    /// Like [`blame`][Self::blame] but at an arbitrary historical commit
+    /// rather than HEAD.
+    pub fn blame_at(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<BlameEntry>> {
+        self.backend.blame_at(path, commit_id)
+    }
+
+    /// Returns the root-level tree entries at `commit_id`, sorted ascending
+    /// by name. Non-recursive — use [`tree_at_path`][Self::tree_at_path]
+    /// to descend into directories.
+    pub fn tree_at_commit(&self, commit_id: &CommitId) -> Result<Vec<TreeEntry>> {
+        self.backend.tree_at_commit(commit_id)
+    }
+
+    /// Returns the tree entries of the directory at `path` within `commit_id`,
+    /// sorted ascending by name.
+    ///
+    /// Returns `Err` if `path` does not exist in the commit or is not a
+    /// directory.
+    pub fn tree_at_path(&self, commit_id: &CommitId, path: &std::path::Path) -> Result<Vec<TreeEntry>> {
+        self.backend.tree_at_path(commit_id, path)
     }
 
     // ── Blame ──────────────────────────────────────────────────────────── //

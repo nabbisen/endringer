@@ -38,7 +38,7 @@ pub use endringer_core::types::{
     ConflictSummary, DiffSummary, HeadState, ObjectFormat, ObjectId,
     ObjectIdFromHexError, OperationState, RebaseKind, RepositoryCapabilities,
     RepositoryInfo, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo,
-    TagAnnotation, TagInfo, WorktreeInfo, WorktreeStatus,
+    TagAnnotation, TagInfo, TreeEntry, TreeEntryKind, WorktreeInfo, WorktreeStatus,
 };
 
 /// The [`VcsBackend`] trait, re-exported for implementing custom backends.

@@ -54,6 +54,7 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [006](./done/006-typed-public-error-model.md) | Typed public error model | v0.23.0 |
 | [007](./done/007-jj-real-repository-verification.md) | jj real-repository verification | v0.24.0 |
 | [008](./done/008-read-side-operation-conflict-state.md) | Read-side operation and conflict state | v0.25.0 |
+| [010](./done/010-point-in-time-reads-tree-snapshots.md) | Point-in-time reads and tree snapshots | v0.26.0 |
 
 ---
 

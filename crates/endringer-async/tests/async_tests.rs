@@ -307,3 +307,48 @@ async fn async_conflict_summary_clean_is_empty() {
     let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
     assert!(repo.conflict_summary().await.unwrap().is_empty());
 }
+
+// ── RFC 010: async point-in-time reads ───────────────────────────────────── //
+
+#[tokio::test]
+async fn async_tree_at_commit_matches_sync() {
+    use endringer_async::AsyncRepository;
+    use endringer::repository::repository;
+
+    let f = Fixture::new();
+    let head_hex = std::process::Command::new("git")
+        .args(["rev-parse", "HEAD"]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .output().unwrap();
+    let head = endringer::CommitId::from_hex(
+        String::from_utf8(head_hex.stdout).unwrap().trim()).unwrap();
+
+    let sync_entries  = repository(f.path()).unwrap().tree_at_commit(&head).unwrap();
+    let async_entries = AsyncRepository::open(f.path()).await.unwrap()
+        .tree_at_commit(head).await.unwrap();
+
+    assert_eq!(
+        sync_entries.iter().map(|e| &e.name).collect::<Vec<_>>(),
+        async_entries.iter().map(|e| &e.name).collect::<Vec<_>>(),
+        "async tree_at_commit should match sync"
+    );
+}
+
+#[tokio::test]
+async fn async_blame_at_no_panic() {
+    let f = Fixture::new();
+    let head_hex = std::process::Command::new("git")
+        .args(["rev-parse", "HEAD"]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .output().unwrap();
+    let head = endringer::CommitId::from_hex(
+        String::from_utf8(head_hex.stdout).unwrap().trim()).unwrap();
+
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    // The async Fixture creates "file.txt", not "README.md".
+    let entries = repo
+        .blame_at(std::path::PathBuf::from("file.txt"), head)
+        .await
+        .unwrap();
+    assert!(!entries.is_empty(), "blame_at should return entries for file.txt");
+}

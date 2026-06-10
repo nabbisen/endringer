@@ -6,7 +6,62 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.25.0] — 2026-06-10
+## [0.26.0] — 2026-06-10
+
+This release implements **RFC 010** (point-in-time reads and tree snapshots).
+It adds 14 new tests (209 total, 0 failures). No breaking changes.
+
+### Added
+
+**RFC 010 — Point-in-time reads and tree snapshots**
+
+New public types, re-exported from `endringer`:
+
+- `TreeEntryKind` enum: `File | Directory | Symlink | Submodule | Other`.
+- `TreeEntry` struct: `path: PathBuf`, `name: String`, `kind: TreeEntryKind`,
+  `object_id: ObjectId`, `size: Option<u64>` (populated for blobs),
+  `executable: bool`.
+
+New `Repository` methods (sync and async):
+
+- `tree_at_commit(commit_id) -> Result<Vec<TreeEntry>>` — non-recursive root
+  tree listing at `commit_id`, sorted ascending by name.
+- `tree_at_path(commit_id, path) -> Result<Vec<TreeEntry>>` — non-recursive
+  listing of the directory at `path` within `commit_id`. Returns `Err` if
+  `path` does not exist or is not a directory.
+- `blame_at(path, commit_id) -> Result<Vec<BlameEntry>>` — per-line commit
+  attribution for `path` at an arbitrary historical commit rather than HEAD.
+
+New `VcsBackend` trait methods (all have `UnsupportedBackendFeature` defaults
+per RFC 003; `GitBackend` overrides all three):
+
+- `fn tree_at_commit(&self, commit_id: &CommitId) -> Result<Vec<TreeEntry>>`
+- `fn tree_at_path(&self, commit_id: &CommitId, path: &Path) -> Result<Vec<TreeEntry>>`
+- `fn blame_at(&self, path: &Path, commit_id: &CommitId) -> Result<Vec<BlameEntry>>`
+
+New `endringer-git/src/tree.rs` module implements tree listing via the gix
+tree iterator. Blob sizes are read by loading the blob object. Tree entries
+are sorted ascending by name at the backend level.
+
+`blame_at` reuses the existing gix `blame_file` call, passing the caller's
+`commit_id` instead of HEAD.
+
+Tests:
+
+- `crates/endringer/tests/git_tree.rs` (12 tests): root listing contains
+  expected files, sorting is ascending, entry kinds (file/directory), file has
+  size, `tree_at_path` into subdirectory, nested directory, missing path
+  returns error, root path equals `tree_at_commit`, historical commit differs
+  from HEAD, `blame_at` HEAD matches `blame`, `blame_at` differs across
+  commits, missing file returns error.
+- `crates/endringer-async/tests/async_tests.rs` (2 new): `tree_at_commit`
+  matches sync, `blame_at` returns entries.
+
+### Changed
+
+- RFC 010 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 008** (read-side operation and conflict state).
 It adds 13 new tests (195 total, 0 failures). No breaking changes.

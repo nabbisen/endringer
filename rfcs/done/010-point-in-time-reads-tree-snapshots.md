@@ -1,6 +1,6 @@
 # RFC 010 — Point-in-time reads and tree snapshots
 
-**Status.** Proposed  
+**Status.** Implemented (v0.26.0)  
 **Priority.** P2  
 **Target band.** v0.26.x  
 **Breaking change.** Adds API; trait impact should be eased by RFC 003  

@@ -12,6 +12,44 @@ pub use identity::{
 
 use std::time::SystemTime;
 
+// ── Tree entries (RFC 010) ────────────────────────────────────────────────── //
+
+/// The kind of a tree entry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TreeEntryKind {
+    /// A regular file.
+    File,
+    /// A directory (sub-tree).
+    Directory,
+    /// A symbolic link.
+    Symlink,
+    /// A git submodule (commit reference).
+    Submodule,
+    /// An unrecognised entry kind.
+    Other,
+}
+
+/// An entry in a git tree (directory listing) at a specific commit.
+///
+/// Returned by [`crate::backend::VcsBackend::tree_at_commit`] and
+/// [`crate::backend::VcsBackend::tree_at_path`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TreeEntry {
+    /// Path relative to the root of the queried tree, using `/` as separator.
+    pub path: std::path::PathBuf,
+    /// Bare file/directory name (last component of `path`).
+    pub name: String,
+    /// Entry kind.
+    pub kind: TreeEntryKind,
+    /// Object ID of the entry (blob, tree, or commit for submodules).
+    pub object_id: ObjectId,
+    /// Byte size of the entry's content, if available.
+    /// `None` for directories and submodules.
+    pub size: Option<u64>,
+    /// Whether the file is executable (only meaningful for `File` entries).
+    pub executable: bool,
+}
+
 // ── AheadBehind ──────────────────────────────────────────────────────────── //
 
 /// Ahead/behind counts between two commit tips.
