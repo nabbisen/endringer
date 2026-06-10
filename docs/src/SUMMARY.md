@@ -27,3 +27,5 @@
 - [Architecture](development/architecture.md)
 - [Contributing & local dev](development/contributing.md)
 - [Migration: v0.23.0 typed errors](development/migration-v0.23-errors.md)
+- [Release quality gates](development/release-gates.md)
+- [Stabilisation dashboard](development/stabilization-dashboard.md)

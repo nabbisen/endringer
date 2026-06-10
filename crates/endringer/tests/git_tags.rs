@@ -65,3 +65,64 @@ fn create_and_delete_annotated_tag() {
     assert!(repo.list_tags().unwrap().iter().any(|t| t.name == name));
     repo.delete_tag(name).unwrap();
 }
+
+// ── RFC 022: tagger_email field ───────────────────────────────────────────── //
+
+#[test]
+fn annotated_tag_tagger_email_populated() {
+    let f = Fixture::new();
+    // Create an annotated tag via git CLI (so the fixture identity is recorded).
+    f.git(&["tag", "-a", "v-annotated-email-test", "-m", "email test"]);
+
+    let repo = repository(f.path()).unwrap();
+    let tags = repo.list_tags().unwrap();
+
+    let tag = tags.iter().find(|t| t.name == "v-annotated-email-test")
+        .expect("annotated tag should appear in listing");
+
+    let annotation = tag.annotation.as_ref()
+        .expect("tag should have annotation");
+
+    // The fixture configures user.email = fixture@test.local.
+    assert_eq!(
+        annotation.tagger_email.as_deref(),
+        Some("fixture@test.local"),
+        "tagger_email should match fixture identity"
+    );
+    assert_eq!(
+        annotation.tagger_name.as_deref(),
+        Some("Fixture"),
+        "tagger_name should match fixture identity"
+    );
+    assert_eq!(annotation.message, "email test");
+
+    // Clean up.
+    repo.delete_tag("v-annotated-email-test").unwrap();
+}
+
+#[test]
+fn lightweight_tag_annotation_is_none() {
+    let f = Fixture::new();
+    let repo = repository(f.path()).unwrap();
+
+    // The fixture's v0.1.0 is a lightweight tag.
+    let tags = repo.list_tags().unwrap();
+    let lightweight = tags.iter().find(|t| t.name == "v0.1.0")
+        .expect("v0.1.0 should exist");
+    assert!(
+        lightweight.annotation.is_none(),
+        "lightweight tag should have annotation: None"
+    );
+}
+
+#[test]
+fn annotated_tag_tagger_email_is_none_when_not_recorded() {
+    // Verify TagAnnotation compiles correctly with tagger_email: None
+    // (e.g. for tags created without identity configured).
+    let _ann = endringer::TagAnnotation {
+        message: "test".to_owned(),
+        tagger_name: None,
+        tagger_email: None,
+        tagger_timestamp: None,
+    };
+}

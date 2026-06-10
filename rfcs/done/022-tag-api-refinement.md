@@ -1,6 +1,6 @@
 # RFC 022 — Tag API refinement and annotation completeness
 
-**Status.** Proposed  
+**Status.** Implemented (v0.28.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** May be breaking if existing tag types are changed  

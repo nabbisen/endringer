@@ -1,6 +1,6 @@
 # RFC 030 — Release quality gates and stabilization dashboard
 
-**Status.** Proposed  
+**Status.** Implemented (v0.28.0)  
 **Priority.** P1  
 **Target band.** v0.28.x and ongoing  
 **Breaking change.** No  

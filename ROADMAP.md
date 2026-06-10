@@ -307,3 +307,4 @@ Readiness criteria:
 [v0.25.0]: https://github.com/nabbisen/endringer/releases/tag/v0.25.0
 [v0.26.0]: https://github.com/nabbisen/endringer/releases/tag/v0.26.0
 [v0.27.0]: https://github.com/nabbisen/endringer/releases/tag/v0.27.0
+[v0.28.0]: https://github.com/nabbisen/endringer/releases/tag/v0.28.0

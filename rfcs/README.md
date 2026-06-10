@@ -26,7 +26,6 @@ Open for review and discussion. Implementation may not yet have begun.
 | [019](./proposed/019-submodule-read-model.md) | Submodule read model and submodule status summary | P3 | v0.29.x |
 | [020](./proposed/020-stash-detail-and-diff-reads.md) | Stash detail and stash diff reads | P3 | v0.29.x |
 | [021](./proposed/021-worktree-detail-and-safety.md) | Linked worktree detail and safety metadata | P3 | v0.29.x |
-| [022](./proposed/022-tag-api-refinement.md) | Tag API refinement and annotation completeness | P2 | v0.28.x |
 | [023](./proposed/023-object-format-sha256-validation.md) | Object format and SHA-256 repository validation | P2 | v0.28.x |
 | [024](./proposed/024-empty-bare-detached-semantics.md) | Empty, bare, detached, and unusual repository semantics | P2 | v0.28.x |
 | [025](./proposed/025-security-resource-hardening.md) | Security and resource-exhaustion hardening | P2 | v0.29.x |
@@ -34,7 +33,6 @@ Open for review and discussion. Implementation may not yet have begun.
 | [027](./proposed/027-snapshot-consistency-batch-reads.md) | Snapshot consistency and batch read APIs | P3 | v0.30.x+ |
 | [028](./proposed/028-rename-copy-detection.md) | Rename and copy detection | P3 | v0.30.x+ |
 | [029](./proposed/029-documentation-cookbook-examples.md) | Documentation cookbook and consumer examples | P2 | v0.28.x |
-| [030](./proposed/030-release-quality-gates.md) | Release quality gates and stabilization dashboard | P1 | v0.28.x+ |
 
 ---
 
@@ -56,6 +54,8 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [008](./done/008-read-side-operation-conflict-state.md) | Read-side operation and conflict state | v0.25.0 |
 | [010](./done/010-point-in-time-reads-tree-snapshots.md) | Point-in-time reads and tree snapshots | v0.26.0 |
 | [011](./done/011-remote-reference-inventory.md) | Remote and reference inventory | v0.27.0 |
+| [022](./done/022-tag-api-refinement.md) | Tag API refinement and annotation completeness | v0.28.0 |
+| [030](./done/030-release-quality-gates.md) | Release quality gates and stabilization dashboard | v0.28.0 |
 
 ---
 

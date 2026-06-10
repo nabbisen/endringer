@@ -393,6 +393,8 @@ pub struct TagAnnotation {
     pub message: String,
     /// Tagger name, if recorded in the tag object.
     pub tagger_name: Option<String>,
+    /// Tagger email, if recorded in the tag object.
+    pub tagger_email: Option<String>,
     /// Tagger timestamp, if recorded in the tag object.
     pub tagger_timestamp: Option<SystemTime>,
 }
@@ -400,14 +402,19 @@ pub struct TagAnnotation {
 /// Information about a tag.
 ///
 /// **Breaking change (v0.18)**: an `annotation` field was added.
-/// Code that constructs `TagInfo` directly must add `annotation: None`.
+/// **Breaking change (v0.28)**: `TagAnnotation` gained a `tagger_email` field.
+/// Code constructing `TagAnnotation` directly must add `tagger_email: None`.
+///
+/// `commit_id` is always the commit reached by peeling the tag target through
+/// any tag objects. Tags that cannot be peeled to a commit are skipped by
+/// list methods.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TagInfo {
     /// Short tag name, e.g. `v1.0.0`.
     pub name: String,
     /// Full ref name, e.g. `refs/tags/v1.0.0`.
     pub full_name: String,
-    /// Commit ID the tag points to (after peeling any tag objects).
+    /// Commit ID reached by peeling the tag to a commit.
     pub commit_id: CommitId,
     /// First line of the tagged commit's message.
     pub commit_summary: String,

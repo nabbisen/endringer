@@ -48,14 +48,15 @@ fn read_annotation(repository: &Repository, reference: &gix::Reference<'_>) -> O
     }
     let tag = obj.try_into_tag().ok()?;
     let message = tag.decode().ok().map(|d| std::str::from_utf8(d.message).map(str::trim).unwrap_or("").to_string())?;
-    let (tagger_name, tagger_timestamp) = if let Ok(Some(sig)) = tag.tagger() {
-        let name = sig.name.to_str_lossy().into_owned();
-        let ts = sig.time().ok().map(|t| seconds_to_systemtime(t.seconds));
-        (Some(name), ts)
+    let (tagger_name, tagger_email, tagger_timestamp) = if let Ok(Some(sig)) = tag.tagger() {
+        let name  = sig.name.to_str_lossy().into_owned();
+        let email = sig.email.to_str_lossy().into_owned();
+        let ts    = sig.time().ok().map(|t| seconds_to_systemtime(t.seconds));
+        (Some(name), Some(email), ts)
     } else {
-        (None, None)
+        (None, None, None)
     };
-    Some(TagAnnotation { message, tagger_name, tagger_timestamp })
+    Some(TagAnnotation { message, tagger_name, tagger_email, tagger_timestamp })
 }
 
 pub(crate) fn list_tags_sorted(repository: &Repository, order: SortOrder) -> Result<Vec<TagInfo>> {

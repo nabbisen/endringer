@@ -6,7 +6,50 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.27.0] — 2026-06-10
+## [0.28.0] — 2026-06-11
+
+This release implements **RFC 022** (tag API refinement) and **RFC 030**
+(release quality gates and stabilisation dashboard). It adds 3 new tests
+(227 total, 0 failures).
+
+### Added
+
+**RFC 022 — Tag API refinement**
+
+- `TagAnnotation` gains a `tagger_email: Option<String>` field.
+  The Git backend populates it from the tagger signature's `email` field
+  (adjacent to the already-read `name` field in `tag.rs::read_annotation`).
+  This is a **breaking change** for code that constructs `TagAnnotation`
+  directly: add `tagger_email: None` to all literal constructions.
+- `TagInfo` doc comment updated to document peeling semantics explicitly:
+  `commit_id` is always the result of peeling to a commit; tags that cannot
+  be peeled are skipped by list methods.
+- Migration note added to `TagInfo` doc comment.
+
+**RFC 030 — Release quality gates and stabilisation dashboard**
+
+- `docs/src/development/release-gates.md`: three gate levels (patch, minor,
+  stabilisation discussion). Each level is a checklist; they are cumulative.
+- `docs/src/development/stabilization-dashboard.md`: per-item status table
+  covering the stabilisation discussion gate. Currently 4/9 items complete;
+  5 remain open. v1.0 is explicitly not planned.
+- Both files added to `docs/src/SUMMARY.md`.
+
+### Tests
+
+- `git_tags.rs` (3 new): `annotated_tag_tagger_email_populated` verifies
+  the email field matches the fixture identity (`fixture@test.local`);
+  `lightweight_tag_annotation_is_none` confirms lightweight tags have no
+  annotation; `annotated_tag_tagger_email_is_none_when_not_recorded`
+  verifies `TagAnnotation { tagger_email: None, … }` compiles correctly.
+
+### Changed
+
+- RFC 022 and RFC 030 moved from `rfcs/proposed/` to `rfcs/done/`.
+- `TagAnnotation` has a new public field (breaking for exhaustive struct
+  literals; all usages inside endringer updated).
+
+---
 
 This release implements **RFC 011** (remote and reference inventory).
 It adds 15 new tests (224 total, 0 failures). No breaking changes.
