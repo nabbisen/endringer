@@ -7,7 +7,8 @@ use endringer_core::error::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
-    CommitInfo, ConflictSummary, DiffSummary, OperationState, RepositoryInfo,
+    CommitInfo, ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind,
+    RemoteInfo, RepositoryInfo,
     SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry,
     WorktreeInfo, WorktreeStatus,
 };
@@ -319,6 +320,32 @@ impl Repository {
     /// directory.
     pub fn tree_at_path(&self, commit_id: &CommitId, path: &std::path::Path) -> Result<Vec<TreeEntry>> {
         self.backend.tree_at_path(commit_id, path)
+    }
+
+    // ── Remote and reference inventory ────────────────────────────────── //
+
+    /// Returns all configured remotes, sorted ascending by name.
+    ///
+    /// Each [`RemoteInfo`] carries the remote name and fetch/push URLs.
+    /// `push_urls` is empty when no explicit push URL is configured.
+    pub fn remotes(&self) -> Result<Vec<RemoteInfo>> {
+        self.backend.remotes()
+    }
+
+    /// Returns all references, sorted ascending by full name.
+    ///
+    /// Includes local branches, remote-tracking branches, tags, HEAD, and
+    /// any other refs present in the repository.
+    pub fn references(&self) -> Result<Vec<RefInfo>> {
+        self.backend.references()
+    }
+
+    /// Returns references of the given `kind`, sorted ascending by full name.
+    ///
+    /// Use [`RefKind::LocalBranch`], [`RefKind::RemoteBranch`],
+    /// [`RefKind::Tag`], [`RefKind::Head`], or [`RefKind::Other`] to filter.
+    pub fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> {
+        self.backend.references_by_kind(kind)
     }
 
     // ── Blame ──────────────────────────────────────────────────────────── //

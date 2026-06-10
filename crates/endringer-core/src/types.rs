@@ -12,6 +12,66 @@ pub use identity::{
 
 use std::time::SystemTime;
 
+// ── Remote and reference inventory (RFC 011) ─────────────────────────────── //
+
+/// Metadata about a configured git remote.
+///
+/// Returned by [`crate::backend::VcsBackend::remotes`].
+///
+/// If the remote has no explicit `pushurl` configured, `push_urls` is empty —
+/// git falls back to the fetch URL for pushes, but endringer reports only what
+/// is explicitly configured.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RemoteInfo {
+    /// The remote's short name (e.g. `origin`).
+    pub name: String,
+    /// Configured fetch URLs (`remote.<name>.url`).
+    pub fetch_urls: Vec<String>,
+    /// Explicitly configured push URLs (`remote.<name>.pushurl`).
+    /// Empty when no dedicated push URL is set.
+    pub push_urls: Vec<String>,
+}
+
+/// Classifies a git reference by its prefix.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefKind {
+    /// A local branch (`refs/heads/…`).
+    LocalBranch,
+    /// A remote-tracking branch (`refs/remotes/…`).
+    RemoteBranch,
+    /// A tag (`refs/tags/…`).
+    Tag,
+    /// The `HEAD` pseudo-ref.
+    Head,
+    /// Any other ref (notes, stash, bisect, …).
+    Other,
+}
+
+/// The target of a git reference.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RefTarget {
+    /// Points directly to an object (commit, tag object, tree, blob).
+    Direct(ObjectId),
+    /// Symbolic reference pointing to another ref by name.
+    Symbolic(String),
+    /// Symbolic ref that names a branch not yet created (fresh `git init`).
+    Unborn,
+}
+
+/// A single git reference.
+///
+/// Returned by [`crate::backend::VcsBackend::references`] and
+/// [`crate::backend::VcsBackend::references_by_kind`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RefInfo {
+    /// The full ref name (e.g. `refs/heads/main`, `HEAD`).
+    pub name: String,
+    /// Classifies the ref by its prefix.
+    pub kind: RefKind,
+    /// What the ref points to.
+    pub target: RefTarget,
+}
+
 // ── Tree entries (RFC 010) ────────────────────────────────────────────────── //
 
 /// The kind of a tree entry.

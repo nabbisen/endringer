@@ -28,9 +28,9 @@ use std::time::SystemTime;
 use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo,
-    WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
+    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
+    TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 /// Common interface implemented by every VCS backend.
@@ -262,5 +262,28 @@ pub trait VcsBackend: Send + Sync {
     /// Default: unsupported-feature error.
     fn tree_at_path(&self, _commit_id: &CommitId, _path: &std::path::Path) -> Result<Vec<TreeEntry>> {
         Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "tree_at_path" })
+    }
+
+    // ── Remote and reference inventory (RFC 011) ──────────────────────── //
+
+    /// Returns all configured remotes, sorted ascending by name.
+    ///
+    /// Default: unsupported-feature error.
+    fn remotes(&self) -> Result<Vec<RemoteInfo>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "remotes" })
+    }
+
+    /// Returns all references, sorted ascending by full name.
+    ///
+    /// Default: unsupported-feature error.
+    fn references(&self) -> Result<Vec<RefInfo>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "references" })
+    }
+
+    /// Returns references matching `kind`, sorted ascending by full name.
+    ///
+    /// Default: unsupported-feature error.
+    fn references_by_kind(&self, _kind: RefKind) -> Result<Vec<RefInfo>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "references_by_kind" })
     }
 }

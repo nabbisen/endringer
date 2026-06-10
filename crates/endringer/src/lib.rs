@@ -36,7 +36,8 @@ pub use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
     CommitId, CommitIdFromHexError, CommitInfo, ConflictPath, ConflictStage,
     ConflictSummary, DiffSummary, HeadState, ObjectFormat, ObjectId,
-    ObjectIdFromHexError, OperationState, RebaseKind, RepositoryCapabilities,
+    ObjectIdFromHexError, OperationState, RebaseKind, RefInfo, RefKind, RefTarget,
+    RemoteInfo, RepositoryCapabilities,
     RepositoryInfo, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo,
     TagAnnotation, TagInfo, TreeEntry, TreeEntryKind, WorktreeInfo, WorktreeStatus,
 };

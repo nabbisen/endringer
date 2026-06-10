@@ -9,9 +9,9 @@ use endringer::Result;
 use endringer::repository::{Repository, jj_repository, repository};
 use endringer::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo,
-    WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
+    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
+    TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 /// Maps a tokio `JoinError` to `endringer::Error::TaskJoin`.
@@ -262,5 +262,22 @@ impl AsyncRepository {
     pub async fn tree_at_path(&self, commit_id: CommitId, path: std::path::PathBuf) -> Result<Vec<TreeEntry>> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.tree_at_path(&commit_id, &path)).await.map_err(join_err)?
+    }
+
+    // ── Remote and reference inventory ────────────────────────────────── //
+
+    pub async fn remotes(&self) -> Result<Vec<RemoteInfo>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.remotes()).await.map_err(join_err)?
+    }
+
+    pub async fn references(&self) -> Result<Vec<RefInfo>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.references()).await.map_err(join_err)?
+    }
+
+    pub async fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.references_by_kind(kind)).await.map_err(join_err)?
     }
 }

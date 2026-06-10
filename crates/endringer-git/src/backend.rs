@@ -6,12 +6,13 @@ use endringer_core::error::{anyhow_to_backend, Error as CrateError, NotFoundKind
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
+    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
+    TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 use crate::{blame, branch, commit, conflict, diff, graph, info, object, operation,
-            stash, status, submodule, tag, tree, worktree};
+            refs, stash, status, submodule, tag, tree, worktree};
 
 /// Git backend.
 ///
@@ -225,5 +226,17 @@ impl VcsBackend for GitBackend {
 
     fn tree_at_path(&self, commit_id: &CommitId, path: &std::path::Path) -> Result<Vec<TreeEntry>> {
         be!(tree::tree_at_path(&repo!(self), commit_id, path))
+    }
+
+    fn remotes(&self) -> Result<Vec<RemoteInfo>> {
+        be!(refs::remotes(&repo!(self)))
+    }
+
+    fn references(&self) -> Result<Vec<RefInfo>> {
+        be!(refs::references(&repo!(self)))
+    }
+
+    fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> {
+        be!(refs::references_by_kind(&repo!(self), kind))
     }
 }

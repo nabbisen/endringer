@@ -6,7 +6,65 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.26.0] — 2026-06-10
+## [0.27.0] — 2026-06-10
+
+This release implements **RFC 011** (remote and reference inventory).
+It adds 15 new tests (224 total, 0 failures). No breaking changes.
+
+### Added
+
+**RFC 011 — Remote and reference inventory**
+
+New public types, re-exported from `endringer`:
+
+- `RemoteInfo` struct: `name: String`, `fetch_urls: Vec<String>`,
+  `push_urls: Vec<String>`. `push_urls` is empty when no explicit
+  `pushurl` is configured (git falls back to the fetch URL for pushes;
+  endringer reports only what is explicitly set).
+- `RefKind` enum: `LocalBranch | RemoteBranch | Tag | Head | Other`.
+- `RefTarget` enum: `Direct(ObjectId) | Symbolic(String) | Unborn`.
+- `RefInfo` struct: `name: String`, `kind: RefKind`, `target: RefTarget`.
+
+New `Repository` methods (sync and async):
+
+- `remotes() -> Result<Vec<RemoteInfo>>` — all configured remotes sorted
+  ascending by name. Reads `remote.<name>.url` and `remote.<name>.pushurl`
+  from git config via `gix::Repository::remote_names()` +
+  `find_remote()` + `.url(Direction::Fetch/Push)`.
+- `references() -> Result<Vec<RefInfo>>` — all refs including HEAD, sorted
+  ascending by full name. Covers local branches, remote-tracking branches,
+  tags, and any other refs (notes, stash, bisect, …).
+- `references_by_kind(kind) -> Result<Vec<RefInfo>>` — refs filtered by
+  `RefKind`, sorted ascending. Uses gix prefix-based iteration for
+  `LocalBranch`, `RemoteBranch`, and `Tag`; HEAD is a special case.
+
+New `VcsBackend` trait methods (all have `UnsupportedBackendFeature`
+defaults; `GitBackend` overrides all three; `JjBackend` inherits defaults
+and delegates via the git store where applicable):
+
+- `fn remotes(&self) -> Result<Vec<RemoteInfo>>`
+- `fn references(&self) -> Result<Vec<RefInfo>>`
+- `fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>>`
+
+New `endringer-git/src/refs.rs` module.
+
+Tests:
+
+- `crates/endringer/tests/git_refs.rs` (12 tests): remotes empty when
+  none configured, single origin after clone, remotes sorted ascending,
+  explicit push URL reported separately from fetch URL; references contain
+  main branch, contain HEAD, are sorted ascending, contain tag with Direct
+  target, HEAD is Symbolic pointing at main; `references_by_kind` for
+  local branches, tags, and HEAD.
+- `crates/endringer-async/tests/async_tests.rs` (3 new): async remotes
+  empty, async references contains main, async references_by_kind tags
+  matches sync.
+
+### Changed
+
+- RFC 011 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 010** (point-in-time reads and tree snapshots).
 It adds 14 new tests (209 total, 0 failures). No breaking changes.

@@ -1,6 +1,6 @@
 # RFC 011 — Remote and reference inventory
 
-**Status.** Proposed  
+**Status.** Implemented (v0.27.0)  
 **Priority.** P3  
 **Target band.** v0.27.x+  
 **Breaking change.** No  

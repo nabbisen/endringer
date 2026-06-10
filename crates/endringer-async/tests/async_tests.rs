@@ -352,3 +352,42 @@ async fn async_blame_at_no_panic() {
         .unwrap();
     assert!(!entries.is_empty(), "blame_at should return entries for file.txt");
 }
+
+// ── RFC 011: async remote and reference inventory ─────────────────────────── //
+
+#[tokio::test]
+async fn async_remotes_empty_on_fixture() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let remotes = repo.remotes().await.unwrap();
+    assert!(remotes.is_empty(), "fixture should have no remotes");
+}
+
+#[tokio::test]
+async fn async_references_contains_main() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let refs = repo.references().await.unwrap();
+    assert!(
+        refs.iter().any(|r| r.name == "refs/heads/main"),
+        "async references should contain refs/heads/main"
+    );
+}
+
+#[tokio::test]
+async fn async_references_by_kind_tags_matches_sync() {
+    use endringer_async::AsyncRepository;
+    use endringer::repository::repository;
+    use endringer::RefKind;
+
+    let f = Fixture::new();
+    let sync_tags  = repository(f.path()).unwrap().references_by_kind(RefKind::Tag).unwrap();
+    let async_tags = AsyncRepository::open(f.path()).await.unwrap()
+        .references_by_kind(RefKind::Tag).await.unwrap();
+
+    assert_eq!(
+        sync_tags.iter().map(|r| &r.name).collect::<Vec<_>>(),
+        async_tags.iter().map(|r| &r.name).collect::<Vec<_>>(),
+        "async and sync tag refs should match"
+    );
+}
