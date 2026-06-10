@@ -1,6 +1,6 @@
 # RFC 025 — Security and resource-exhaustion hardening for local repository reads
 
-**Status.** Proposed  
+**Status.** Implemented (v0.31.0)  
 **Priority.** P2  
 **Target band.** v0.29.x  
 **Breaking change.** No  

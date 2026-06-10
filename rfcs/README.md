@@ -16,14 +16,9 @@ Open for review and discussion. Implementation may not yet have begun.
 |----|-------|----------|-------------|
 | [010](./proposed/010-point-in-time-reads-tree-snapshots.md) | Point-in-time reads and tree snapshots | P2 | v0.26.x |
 | [011](./proposed/011-remote-reference-inventory.md) | Remote and reference inventory | P3 | v0.27.x+ |
-| [013](./proposed/013-rich-status-model.md) | Rich status model | P3 | v0.27.x+ |
 | [014](./proposed/014-path-platform-robustness-matrix.md) | Path and platform robustness matrix | P2 | v0.27.x+ |
 | [015](./proposed/015-git-cli-parity-test-harness.md) | Git CLI parity test harness | P2 | v0.27.x+ |
-| [016](./proposed/016-crate-feature-dependency-policy.md) | Crate, feature, and dependency policy | P2 | v0.28.x |
 | [017](./proposed/017-performance-benchmarking-large-repo-profiling.md) | Performance benchmarking and large-repository profiling | P2 | v0.28.x |
-| [018](./proposed/018-async-api-operational-semantics.md) | Async API operational semantics and cancellation expectations | P2 | v0.28.x |
-| [023](./proposed/023-object-format-sha256-validation.md) | Object format and SHA-256 repository validation | P2 | v0.28.x |
-| [025](./proposed/025-security-resource-hardening.md) | Security and resource-exhaustion hardening | P2 | v0.29.x |
 | [026](./proposed/026-custom-backend-conformance-kit.md) | Custom backend conformance kit | P3 | v0.30.x |
 | [027](./proposed/027-snapshot-consistency-batch-reads.md) | Snapshot consistency and batch read APIs | P3 | v0.30.x+ |
 | [028](./proposed/028-rename-copy-detection.md) | Rename and copy detection | P3 | v0.30.x+ |
@@ -56,6 +51,11 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [020](./done/020-stash-detail-and-diff-reads.md) | Stash detail and diff reads | v0.30.0 |
 | [021](./done/021-worktree-detail-and-safety.md) | Linked worktree detail and safety metadata | v0.30.0 |
 | [029](./done/029-documentation-cookbook-examples.md) | Documentation cookbook and consumer examples | v0.30.0 |
+| [013](./done/013-rich-status-model.md) | Rich status model | v0.31.0 |
+| [016](./done/016-crate-feature-dependency-policy.md) | Crate, feature, and dependency policy | v0.31.0 |
+| [018](./done/018-async-api-operational-semantics.md) | Async API operational semantics | v0.31.0 |
+| [023](./done/023-object-format-sha256-validation.md) | Object format and SHA-256 validation | v0.31.0 |
+| [025](./done/025-security-resource-hardening.md) | Security and resource-exhaustion hardening | v0.31.0 |
 
 ---
 

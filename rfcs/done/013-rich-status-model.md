@@ -1,6 +1,6 @@
 # RFC 013 — Rich status model
 
-**Status.** Proposed  
+**Status.** Implemented (v0.31.0)  
 **Priority.** P3  
 **Target band.** v0.27.x+  
 **Breaking change.** No if added as v2 API; replacing current `WorktreeStatus` would be breaking and is deferred  

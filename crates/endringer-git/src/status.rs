@@ -206,3 +206,84 @@ fn collect_untracked(
     }
     Ok(())
 }
+
+// ── RFC 013: rich_worktree_status ─────────────────────────────────────────── //
+
+pub(crate) fn rich_worktree_status(
+    repo: &gix::Repository,
+    options: endringer_core::types::StatusOptions,
+) -> anyhow::Result<endringer_core::types::RichWorktreeStatus> {
+    use endringer_core::types::{
+        ConflictStatus, FileStatusKind, RichStatusEntry, RichWorktreeStatus,
+    };
+    use std::collections::BTreeMap;
+
+    // Reuse the existing worktree_status to get staged/unstaged/untracked.
+    let simple = worktree_status(repo)?;
+
+    let mut entries: BTreeMap<std::path::PathBuf, RichStatusEntry> = BTreeMap::new();
+
+    // Map staged changes.
+    for se in &simple.staged {
+        let kind = match se.kind {
+            endringer_core::types::ChangeKind::Added    => FileStatusKind::Added,
+            endringer_core::types::ChangeKind::Modified => FileStatusKind::Modified,
+            endringer_core::types::ChangeKind::Deleted  => FileStatusKind::Deleted,
+        };
+        entries.entry(se.path.clone()).or_insert_with(|| RichStatusEntry {
+            path: se.path.clone(), old_path: None,
+            index: None, worktree: None, conflict: None,
+        }).index = Some(kind);
+    }
+
+    // Map unstaged changes.
+    for se in &simple.unstaged {
+        let kind = match se.kind {
+            endringer_core::types::ChangeKind::Added    => FileStatusKind::Added,
+            endringer_core::types::ChangeKind::Modified => FileStatusKind::Modified,
+            endringer_core::types::ChangeKind::Deleted  => FileStatusKind::Deleted,
+        };
+        entries.entry(se.path.clone()).or_insert_with(|| RichStatusEntry {
+            path: se.path.clone(), old_path: None,
+            index: None, worktree: None, conflict: None,
+        }).worktree = Some(kind);
+    }
+
+    // Conflict info from index stages.
+    if let Ok(Some(index)) = repo.try_index() {
+        let mut conflict_map: BTreeMap<std::path::PathBuf, Vec<u8>> = BTreeMap::new();
+        for entry in index.entries() {
+            let stage = entry.flags.stage();
+            if stage != gix::index::entry::Stage::Unconflicted {
+                let stage_num = match stage {
+                    gix::index::entry::Stage::Base   => 1u8,
+                    gix::index::entry::Stage::Ours   => 2u8,
+                    gix::index::entry::Stage::Theirs => 3u8,
+                    _ => continue,
+                };
+                if let Ok(p) = std::str::from_utf8(entry.path(&index)) {
+                    conflict_map.entry(std::path::PathBuf::from(p))
+                        .or_default().push(stage_num);
+                }
+            }
+        }
+        for (path, stages) in conflict_map {
+            entries.entry(path.clone()).or_insert_with(|| RichStatusEntry {
+                path, old_path: None, index: None, worktree: None, conflict: None,
+            }).conflict = Some(ConflictStatus { stages });
+        }
+    }
+
+    // Untracked files.
+    if options.include_untracked {
+        for path in &simple.untracked {
+            entries.entry(path.clone()).or_insert_with(|| RichStatusEntry {
+                path: path.clone(), old_path: None,
+                index: None, worktree: Some(FileStatusKind::Untracked), conflict: None,
+            });
+        }
+    }
+
+    let sorted_entries: Vec<RichStatusEntry> = entries.into_values().collect();
+    Ok(RichWorktreeStatus { entries: sorted_entries })
+}

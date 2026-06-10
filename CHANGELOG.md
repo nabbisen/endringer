@@ -6,7 +6,55 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.30.0] — 2026-06-11
+## [0.31.0] — 2026-06-11
+
+This release implements **RFC 013** (rich status model), **RFC 016** (dependency
+policy), **RFC 018** (async semantics), **RFC 023** (SHA-256 validation), and
+**RFC 025** (security hardening). It adds 25 new tests (290 total, 0 failures).
+No breaking changes.
+
+### Added
+
+**RFC 013 — Rich status model**
+
+New public types, re-exported from `endringer`:
+
+- `FileStatusKind` enum: `Added | Modified | Deleted | Renamed | Copied | TypeChanged | ModeChanged | Untracked | Ignored | SubmoduleChanged`.
+- `ConflictStatus` struct: `stages: Vec<u8>`.
+- `RichStatusEntry` struct: `path`, `old_path`, `index: Option<FileStatusKind>`, `worktree: Option<FileStatusKind>`, `conflict: Option<ConflictStatus>`.
+- `RichWorktreeStatus` struct: `entries: Vec<RichStatusEntry>`, sorted ascending by path.
+- `StatusOptions` struct: `include_untracked: bool` (default `true`), `include_ignored: bool` (default `false`). Implements `Default`.
+
+New Repository methods (sync and async):
+
+- `rich_worktree_status(options: StatusOptions) -> Result<RichWorktreeStatus>` — maps staged, unstaged, conflict, and untracked state into `RichStatusEntry` values. Implemented in `endringer-git/src/status.rs` by compositing the existing `worktree_status()` call with conflict-stage reading from the gix index. `VcsBackend` default: `UnsupportedBackendFeature`.
+
+Tests: `crates/endringer/tests/git_rich_status.rs` (10 tests) + 2 async parity tests.
+
+**RFC 016 — Dependency and feature policy**
+
+- `docs/src/development/dependency-policy.md`: per-crate dependency rules, feature flag policy, public dependency rule, when to add a crate, runtime binary policy.
+
+**RFC 018 — Async API operational semantics**
+
+- `docs/src/development/async-semantics.md`: `spawn_blocking` semantics, cancellation contract, recommended semaphore pattern, error mapping, sync/async parity checklist.
+
+**RFC 023 — Object format and SHA-256 validation**
+
+- `docs/src/reference/object-formats.md`: SHA-1/SHA-256 support matrix, `CommitId` behaviour, jj SHA-256 stance, `ObjectFormat` usage example.
+- `crates/endringer/tests/git_core.rs` (3 new tests): `CommitId::from_hex` rejects wrong lengths, accepts SHA-1 and SHA-256, SHA-256 repo opens with `ObjectFormat::Sha256` (skips gracefully if git doesn't support `--object-format=sha256`).
+
+**RFC 025 — Security and resource-exhaustion hardening**
+
+- `docs/src/security.md`: threat model, what endringer doesn't do (no hooks, no network, no external commands), resource considerations, SHA-1 collision handling, reporting guidance.
+- `crates/endringer/tests/git_hardening.rs` (10 tests): `CommitId` rejects non-hex and wrong lengths, short is always 7 chars, non-git dir returns typed error, nonexistent path returns error without panic, `file_at_commit` errors on missing path/invalid commit, bounded history never exceeds `max_count`, bare repo reads don't panic, external command guarantee documented.
+
+### Changed
+
+- RFC 013, 016, 018, 023, 025 moved from `rfcs/proposed/` to `rfcs/done/`.
+- `docs/src/SUMMARY.md` updated with new pages in development, reference, and security sections.
+
+---
 
 This release implements **RFC 019** (submodule detail), **RFC 020** (stash
 detail and diff), **RFC 021** (worktree detail), and **RFC 029** (documentation

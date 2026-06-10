@@ -1,6 +1,6 @@
 # RFC 018 — Async API operational semantics and cancellation expectations
 
-**Status.** Proposed  
+**Status.** Implemented (v0.31.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** No  

@@ -748,3 +748,73 @@ pub struct WorktreeDetail {
     /// Filesystem/administrative state of this linked worktree.
     pub state: WorktreeState,
 }
+
+// ── Rich status model (RFC 013) ──────────────────────────────────────────── //
+
+/// Richer file-level change kind for the rich status model.
+///
+/// Returned in [`RichStatusEntry`]. The simpler [`ChangeKind`] is preserved
+/// for the existing [`WorktreeStatus`] API.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FileStatusKind {
+    Added,
+    Modified,
+    Deleted,
+    Renamed,
+    Copied,
+    TypeChanged,
+    ModeChanged,
+    Untracked,
+    Ignored,
+    SubmoduleChanged,
+}
+
+/// Conflict stage information within a rich status entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictStatus {
+    /// Stage numbers present (1 = base, 2 = ours, 3 = theirs).
+    pub stages: Vec<u8>,
+}
+
+/// A single entry in the rich working-tree status.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RichStatusEntry {
+    /// Current path relative to the repository root.
+    pub path: std::path::PathBuf,
+    /// Former path for renames/copies; `None` otherwise.
+    pub old_path: Option<std::path::PathBuf>,
+    /// Status of this path in the index (staged area) vs HEAD.
+    pub index: Option<FileStatusKind>,
+    /// Status of this path in the working tree vs index.
+    pub worktree: Option<FileStatusKind>,
+    /// Conflict information, if the path has higher-stage index entries.
+    pub conflict: Option<ConflictStatus>,
+}
+
+/// Rich working-tree status including more states than the simple API.
+///
+/// Returned by [`crate::backend::VcsBackend::rich_worktree_status`].
+/// The simpler [`crate::backend::VcsBackend::worktree_status`] is unchanged.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RichWorktreeStatus {
+    /// Status entries, sorted ascending by path.
+    pub entries: Vec<RichStatusEntry>,
+}
+
+/// Options for a rich worktree status query.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatusOptions {
+    /// Include untracked files (default: true).
+    pub include_untracked: bool,
+    /// Include ignored files (default: false).
+    pub include_ignored: bool,
+}
+
+impl Default for StatusOptions {
+    fn default() -> Self {
+        StatusOptions {
+            include_untracked: true,
+            include_ignored: false,
+        }
+    }
+}

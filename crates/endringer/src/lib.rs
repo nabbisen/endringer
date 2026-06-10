@@ -35,13 +35,13 @@ pub use endringer_core::error::{Error, NotFoundKind, Result};
 pub use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
     CommitId, CommitIdFromHexError, CommitInfo, CommitQuery, CommitQueryResult,
-    CommitQueryStart, ConflictPath, ConflictStage,
-    ConflictSummary, DiffSummary, HeadState, ObjectFormat, ObjectId,
+    CommitQueryStart, ConflictPath, ConflictStage, ConflictStatus,
+    ConflictSummary, DiffSummary, FileStatusKind, HeadState, ObjectFormat, ObjectId,
     ObjectIdFromHexError, OperationState, RebaseKind, RefInfo, RefKind, RefTarget,
-    RemoteInfo, RepositoryCapabilities,
+    RemoteInfo, RepositoryCapabilities, RichStatusEntry, RichWorktreeStatus,
     RepositoryInfo, SortOrder, StashDetail, StashEntry, StashId,
-    StatusDigest, StatusEntry, SubmoduleInfo, SubmoduleSummary, SubmoduleState,
-    TagAnnotation, TagInfo, TreeEntry, TreeEntryKind,
+    StatusDigest, StatusEntry, StatusOptions, SubmoduleInfo, SubmoduleSummary,
+    SubmoduleState, TagAnnotation, TagInfo, TreeEntry, TreeEntryKind,
     WorktreeDetail, WorktreeInfo, WorktreeState, WorktreeStatus,
 };
 

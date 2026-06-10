@@ -456,3 +456,28 @@ async fn async_worktree_details_no_linked_worktrees() {
     let details = repo.worktree_details().await.unwrap();
     assert!(details.is_empty(), "fixture has no linked worktrees");
 }
+
+// ── RFC 013: async rich_worktree_status ──────────────────────────────────── //
+
+#[tokio::test]
+async fn async_rich_worktree_status_clean_repo() {
+    use endringer::StatusOptions;
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let status = repo.rich_worktree_status(StatusOptions::default()).await.unwrap();
+    assert!(status.entries.is_empty(), "clean repo should have no rich status entries");
+}
+
+#[tokio::test]
+async fn async_rich_worktree_status_matches_sync() {
+    use endringer::{StatusOptions, repository::repository};
+    let f = Fixture::new();
+    std::fs::write(f.path().join("new.txt"), "hello").unwrap();
+
+    let sync_status = repository(f.path()).unwrap()
+        .rich_worktree_status(StatusOptions::default()).unwrap();
+    let async_status = endringer_async::AsyncRepository::open(f.path()).await.unwrap()
+        .rich_worktree_status(StatusOptions::default()).await.unwrap();
+    assert_eq!(sync_status.entries.len(), async_status.entries.len(),
+        "sync and async rich status should have same number of entries");
+}

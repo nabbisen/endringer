@@ -18,6 +18,7 @@
 - [Types](reference/types.md)
 - [Backends: Git and Jujutsu](reference/backends.md)
 - [Unusual repository states](reference/unusual-repositories.md)
+- [Object format support](reference/object-formats.md)
 - [Public contract statements](reference/contract.md)
 
 ---
@@ -30,6 +31,10 @@
 - [Migration: v0.23.0 typed errors](development/migration-v0.23-errors.md)
 - [Release quality gates](development/release-gates.md)
 - [Stabilisation dashboard](development/stabilization-dashboard.md)
+- [Dependency and feature policy](development/dependency-policy.md)
+- [Async API semantics](development/async-semantics.md)
+
+- [Security posture](security.md)
 
 ## Cookbook
 

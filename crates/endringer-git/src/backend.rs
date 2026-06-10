@@ -7,8 +7,9 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
-    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashDetail, StashEntry,
-    StatusDigest, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
+    RefInfo, RefKind, RemoteInfo, RepositoryInfo, RichWorktreeStatus, SortOrder,
+    StashDetail, StashEntry, StatusDigest, StatusOptions, SubmoduleInfo,
+    SubmoduleSummary, TagInfo, TreeEntry,
     WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 
@@ -182,6 +183,10 @@ impl VcsBackend for GitBackend {
 
     fn worktree_status(&self) -> Result<WorktreeStatus> {
         be!(status::worktree_status(&repo!(self)))
+    }
+
+    fn rich_worktree_status(&self, options: StatusOptions) -> Result<RichWorktreeStatus> {
+        be!(status::rich_worktree_status(&repo!(self), options))
     }
 
     fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>> {

@@ -53,4 +53,4 @@ See `rfcs/proposed/` for the full list (012–029).
 
 ---
 
-*Last updated: v0.30.0*
+*Last updated: v0.31.0*

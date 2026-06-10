@@ -1,6 +1,6 @@
 # RFC 016 — Crate, feature, and dependency policy
 
-**Status.** Proposed  
+**Status.** Implemented (v0.31.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** No, unless public dependency expectations are changed  

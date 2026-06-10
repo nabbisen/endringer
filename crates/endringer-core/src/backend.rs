@@ -30,7 +30,8 @@ use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult,
     ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
-    RepositoryInfo, SortOrder, StashDetail, StashEntry, StatusDigest,
+    RepositoryInfo, RichWorktreeStatus, SortOrder, StashDetail, StashEntry,
+    StatusDigest, StatusOptions,
     SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
     WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
@@ -93,6 +94,13 @@ pub trait VcsBackend: Send + Sync {
     /// Returns per-file working-tree status: staged changes, unstaged
     /// changes, and untracked files (with gitignore applied).
     fn worktree_status(&self) -> Result<WorktreeStatus>;
+
+    /// Returns a richer working-tree status with more file-level change kinds.
+    ///
+    /// Default: unsupported-feature error.
+    fn rich_worktree_status(&self, _options: StatusOptions) -> Result<RichWorktreeStatus> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "rich_worktree_status" })
+    }
 
     /// Returns the raw bytes of `path` (relative to the repository root)
     /// as it exists in the tree of `commit_id`.

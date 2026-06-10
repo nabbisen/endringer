@@ -1,6 +1,6 @@
 # RFC 023 — Object format and SHA-256 repository validation
 
-**Status.** Proposed  
+**Status.** Implemented (v0.31.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** No for validation; may add API  

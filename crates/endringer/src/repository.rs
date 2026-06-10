@@ -8,9 +8,10 @@ use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
     CommitInfo, CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary,
-    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder,
-    StashDetail, StashEntry, StatusDigest, SubmoduleInfo, SubmoduleSummary,
-    TagInfo, TreeEntry, WorktreeDetail, WorktreeInfo, WorktreeStatus,
+    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo,
+    RichWorktreeStatus, SortOrder, StashDetail, StashEntry, StatusDigest,
+    StatusOptions, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
+    WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -381,6 +382,15 @@ impl Repository {
     /// all untracked files without filtering.
     pub fn worktree_status(&self) -> Result<WorktreeStatus> {
         self.backend.worktree_status()
+    }
+
+    /// Returns a richer working-tree status with more file-level change kinds.
+    ///
+    /// Includes conflict information and untracked files. Ignored files are
+    /// included only when `options.include_ignored` is true.
+    /// Use [`StatusOptions::default()`] for the common case.
+    pub fn rich_worktree_status(&self, options: StatusOptions) -> Result<RichWorktreeStatus> {
+        self.backend.rich_worktree_status(options)
     }
 
     // ── File content ───────────────────────────────────────────────────── //
