@@ -1,6 +1,6 @@
 # RFC 012 — Bounded history queries
 
-**Status.** Proposed  
+**Status.** Implemented (v0.29.0)  
 **Priority.** P3  
 **Target band.** v0.27.x+  
 **Breaking change.** No  

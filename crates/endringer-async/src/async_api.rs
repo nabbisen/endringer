@@ -9,9 +9,9 @@ use endringer::Result;
 use endringer::repository::{Repository, jj_repository, repository};
 use endringer::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
-    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
-    TreeEntry, WorktreeInfo, WorktreeStatus,
+    CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
+    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashEntry,
+    StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 /// Maps a tokio `JoinError` to `endringer::Error::TaskJoin`.
@@ -87,6 +87,11 @@ impl AsyncRepository {
     pub async fn find_commit(&self, id: CommitId) -> Result<CommitInfo> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.find_commit(&id)).await.map_err(join_err)?
+    }
+
+    pub async fn query_commits(&self, query: CommitQuery) -> Result<CommitQueryResult> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.query_commits(query)).await.map_err(join_err)?
     }
 
     // ── Tags ───────────────────────────────────────────────────────────── //

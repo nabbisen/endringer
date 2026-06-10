@@ -38,6 +38,8 @@ originally scoped APIs are implemented and tested:
 | Operation and conflict state | v0.25.0 | RFC 008 |
 | Point-in-time reads and tree snapshots | v0.26.0 | RFC 010 |
 | Remote and reference inventory | v0.27.0 | RFC 011 |
+| Bounded history queries | v0.29.0 | RFC 012 |
+| Unusual repository semantics | v0.29.0 | RFC 024 |
 
 ---
 
@@ -51,4 +53,4 @@ See `rfcs/proposed/` for the full list (012–029).
 
 ---
 
-*Last updated: v0.28.0*
+*Last updated: v0.29.0*

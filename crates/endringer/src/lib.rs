@@ -34,7 +34,8 @@ pub use endringer_core::error::{Error, NotFoundKind, Result};
 
 pub use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
-    CommitId, CommitIdFromHexError, CommitInfo, ConflictPath, ConflictStage,
+    CommitId, CommitIdFromHexError, CommitInfo, CommitQuery, CommitQueryResult,
+    CommitQueryStart, ConflictPath, ConflictStage,
     ConflictSummary, DiffSummary, HeadState, ObjectFormat, ObjectId,
     ObjectIdFromHexError, OperationState, RebaseKind, RefInfo, RefKind, RefTarget,
     RemoteInfo, RepositoryCapabilities,

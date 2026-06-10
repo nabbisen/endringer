@@ -391,3 +391,41 @@ async fn async_references_by_kind_tags_matches_sync() {
         "async and sync tag refs should match"
     );
 }
+
+// ── RFC 012: async query_commits ─────────────────────────────────────────── //
+
+#[tokio::test]
+async fn async_query_commits_head_page() {
+    use endringer::CommitQuery;
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let result = repo.query_commits(CommitQuery::head_page(5)).await.unwrap();
+    assert!(!result.commits.is_empty(), "head_page should return commits");
+}
+
+#[tokio::test]
+async fn async_query_commits_truncated_flag() {
+    use endringer::CommitQuery;
+    let f = Fixture::new();
+
+    // Add a second commit so there are ≥ 2, making max_count=1 truncate.
+    let git = |args: &[&str]| {
+        std::process::Command::new("git")
+            .args(args)
+            .current_dir(f.path())
+            .env("GIT_CONFIG_NOSYSTEM","1")
+            .env("GIT_CONFIG_GLOBAL","/dev/null")
+            .env("GIT_EDITOR","true")
+            .env("GIT_TERMINAL_PROMPT","0")
+            .stdin(std::process::Stdio::null())
+            .status().unwrap();
+    };
+    std::fs::write(f.path().join("extra.txt"), "x").unwrap();
+    git(&["add", "."]);
+    git(&["commit", "-m", "second commit"]);
+
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let result = repo.query_commits(CommitQuery::head_page(1)).await.unwrap();
+    assert_eq!(result.commits.len(), 1);
+    assert!(result.truncated, "should be truncated when history is longer than max_count");
+}

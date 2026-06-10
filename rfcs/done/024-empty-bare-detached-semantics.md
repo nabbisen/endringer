@@ -1,6 +1,6 @@
 # RFC 024 — Empty, bare, detached, and unusual repository semantics
 
-**Status.** Proposed  
+**Status.** Implemented (v0.29.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** May clarify errors; should avoid unnecessary breakage  

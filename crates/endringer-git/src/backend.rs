@@ -6,9 +6,9 @@ use endringer_core::error::{anyhow_to_backend, Error as CrateError, NotFoundKind
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
-    RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
-    TreeEntry, WorktreeInfo, WorktreeStatus,
+    CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
+    RefInfo, RefKind, RemoteInfo, RepositoryInfo, SortOrder, StashEntry,
+    StatusDigest, SubmoduleInfo, TagInfo, TreeEntry, WorktreeInfo, WorktreeStatus,
 };
 
 use crate::{blame, branch, commit, conflict, diff, graph, info, object, operation,
@@ -87,6 +87,10 @@ impl VcsBackend for GitBackend {
                 anyhow_to_backend(e)
             }
         })
+    }
+
+    fn query_commits(&self, query: CommitQuery) -> Result<CommitQueryResult> {
+        be!(branch::query_commits(&repo!(self), query))
     }
 
     fn list_tags(&self) -> Result<Vec<TagInfo>> {

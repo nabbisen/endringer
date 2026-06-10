@@ -28,6 +28,7 @@ use std::time::SystemTime;
 use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    CommitQuery, CommitQueryResult,
     ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
     RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo,
     TreeEntry, WorktreeInfo, WorktreeStatus,
@@ -54,6 +55,16 @@ pub trait VcsBackend: Send + Sync {
     fn list_commits_sorted(&self, order: SortOrder) -> Result<Vec<CommitInfo>>;
     fn log_since(&self, since: SystemTime, until: SystemTime) -> Result<Vec<CommitInfo>>;
     fn find_commit(&self, id: &CommitId) -> Result<CommitInfo>;
+
+    /// Returns a bounded page of commit history according to `query`.
+    ///
+    /// `CommitQueryResult::truncated` is `true` when `max_count` was reached
+    /// and more commits may exist beyond the page.
+    ///
+    /// Default: unsupported-feature error.
+    fn query_commits(&self, _query: CommitQuery) -> Result<CommitQueryResult> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "query_commits" })
+    }
 
     fn list_tags(&self) -> Result<Vec<TagInfo>>;
     fn list_tags_sorted(&self, order: SortOrder) -> Result<Vec<TagInfo>>;

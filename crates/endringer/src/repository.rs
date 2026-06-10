@@ -7,8 +7,8 @@ use endringer_core::error::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
-    CommitInfo, ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind,
-    RemoteInfo, RepositoryInfo,
+    CommitInfo, CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary,
+    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo,
     SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, TreeEntry,
     WorktreeInfo, WorktreeStatus,
 };
@@ -132,6 +132,15 @@ impl Repository {
     /// Looks up a single commit by its [`CommitId`] (O(1) object-DB lookup).
     pub fn find_commit(&self, id: &CommitId) -> Result<CommitInfo> {
         self.backend.find_commit(id)
+    }
+
+    /// Returns a bounded page of commit history according to `query`.
+    ///
+    /// `CommitQueryResult::truncated` is `true` when `max_count` was reached
+    /// and more commits may exist. Use [`CommitQuery::head_page`] for the
+    /// common first-page case.
+    pub fn query_commits(&self, query: CommitQuery) -> Result<CommitQueryResult> {
+        self.backend.query_commits(query)
     }
 
     // ── Tags ───────────────────────────────────────────────────────────── //

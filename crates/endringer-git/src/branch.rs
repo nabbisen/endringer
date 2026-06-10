@@ -1,7 +1,10 @@
 use std::time::SystemTime;
 
 use anyhow::{Context, Result};
-use endringer_core::types::{AheadBehind, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo, SortOrder};
+use endringer_core::types::{
+    AheadBehind, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    CommitQuery, CommitQueryResult, CommitQueryStart, SortOrder,
+};
 use gix::Repository;
 
 use crate::util::{gix_id_to_commit_id, seconds_to_systemtime};
@@ -239,4 +242,94 @@ fn is_upstream_gone(repository: &Repository, upstream: Option<&str>) -> bool {
         None => false,
         Some(r) => repository.find_reference(r).is_err(),
     }
+}
+
+// ── Bounded history query (RFC 012) ──────────────────────────────────────── //
+
+pub(crate) fn query_commits(
+    repository: &Repository,
+    query: CommitQuery,
+) -> Result<CommitQueryResult> {
+    // Resolve the starting OID, then attach to repo for the ancestors walk.
+    let start_oid: gix::ObjectId = match &query.start {
+        CommitQueryStart::Head => {
+            let head = repository.head()?;
+            head.id()
+                .ok_or_else(|| anyhow::anyhow!("HEAD is unborn or missing — no commits to query"))?
+                .detach()
+        }
+        CommitQueryStart::Commit(cid) => {
+            gix::ObjectId::from_hex(cid.to_string().as_bytes())
+                .map_err(|_| anyhow::anyhow!("invalid commit id '{}'", cid))?
+        }
+        CommitQueryStart::Ref(refname) => {
+            let full = if refname.starts_with("refs/") { refname.clone() }
+                       else { format!("refs/heads/{refname}") };
+            let mut reference = repository
+                .find_reference(full.as_str())
+                .or_else(|_| repository.find_reference(refname.as_str()))
+                .with_context(|| format!("ref not found: {refname}"))?;
+            reference.peel_to_commit()?.id
+        }
+    };
+    // Attach the OID so we can call .ancestors().
+    let start_id = repository.find_object(start_oid)?.id();
+
+    // Collect up to max_count + 1 commits for truncation detection.
+    let limit = query.max_count.map(|n| n + 1);
+    let mut collected: Vec<CommitInfo> = Vec::new();
+
+    for info in start_id.ancestors().all()? {
+        if let Some(lim) = limit {
+            if collected.len() >= lim {
+                break;
+            }
+        }
+        let info = info?;
+        let commit = info.object()?;
+        let message   = commit.message()?;
+        let author    = commit.author()?;
+        let committer = commit.committer()?;
+        let author_time = author.time().context("failed to read author timestamp")?;
+        let committer_time = committer.time().context("failed to read committer timestamp")?;
+        let timestamp = seconds_to_systemtime(author_time.seconds);
+
+        // Timestamp filters (applied to author timestamp).
+        if let Some(since) = query.since {
+            if timestamp < since { continue; }
+        }
+        if let Some(until) = query.until {
+            if timestamp > until { continue; }
+        }
+
+        let parents: Vec<CommitId> = info
+            .parent_ids.iter().copied().map(gix_id_to_commit_id).collect();
+
+        collected.push(CommitInfo {
+            commit_id:           gix_id_to_commit_id(info.id),
+            parents,
+            summary:             message.summary().to_string(),
+            author:              author.name.to_string(),
+            committer:           committer.name.to_string(),
+            timestamp,
+            committer_timestamp: seconds_to_systemtime(committer_time.seconds),
+        });
+    }
+
+    // Apply skip.
+    if query.skip > 0 {
+        let skip = query.skip.min(collected.len());
+        collected.drain(..skip);
+    }
+
+    // Detect truncation (we fetched one extra).
+    let truncated = query.max_count.is_some_and(|n| collected.len() > n);
+    if truncated {
+        collected.truncate(query.max_count.unwrap());
+    }
+
+    // Apply sort.
+    apply_commit_sort(&mut collected, query.order);
+
+    Ok(CommitQueryResult { commits: collected, truncated })
 }

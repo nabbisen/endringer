@@ -424,6 +424,71 @@ pub struct TagInfo {
     pub annotation: Option<TagAnnotation>,
 }
 
+// ── Bounded history queries (RFC 012) ────────────────────────────────────── //
+
+/// The starting ref or commit for a bounded history query.
+#[derive(Clone, Debug)]
+pub enum CommitQueryStart {
+    /// Start from the current HEAD.
+    Head,
+    /// Start from a specific commit.
+    Commit(CommitId),
+    /// Start from the tip of a named ref (full ref name or short branch name).
+    Ref(String),
+}
+
+/// A bounded commit-history query.
+///
+/// Passed to [`crate::backend::VcsBackend::query_commits`].
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let page = repo.query_commits(CommitQuery::head_page(50))?;
+/// ```
+#[derive(Clone, Debug)]
+pub struct CommitQuery {
+    /// Where to start the walk.
+    pub start: CommitQueryStart,
+    /// Maximum number of commits to return. `None` means no limit (equivalent
+    /// to `list_commits()`).
+    pub max_count: Option<usize>,
+    /// Number of commits to skip from the start before collecting results.
+    /// Offset-based pagination — inefficient for deep pages on large histories.
+    pub skip: usize,
+    /// Exclude commits with author timestamp strictly before this instant.
+    pub since: Option<std::time::SystemTime>,
+    /// Exclude commits with author timestamp strictly after this instant.
+    pub until: Option<std::time::SystemTime>,
+    /// Result ordering.
+    pub order: SortOrder,
+}
+
+impl CommitQuery {
+    /// Returns a query for the first `max_count` commits from HEAD,
+    /// newest first.
+    pub fn head_page(max_count: usize) -> Self {
+        CommitQuery {
+            start: CommitQueryStart::Head,
+            max_count: Some(max_count),
+            skip: 0,
+            since: None,
+            until: None,
+            order: SortOrder::NewestFirst,
+        }
+    }
+}
+
+/// The result of a bounded history query.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommitQueryResult {
+    /// The matching commits.
+    pub commits: Vec<CommitInfo>,
+    /// `true` when `max_count` was reached and more commits may exist beyond
+    /// the returned page.
+    pub truncated: bool,
+}
+
 // ── SortOrder / DiffSummary / BackendKind / BlameEntry ───────────────────── //
 
 /// Sort order for commit and tag listings.

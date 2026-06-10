@@ -6,7 +6,67 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.28.0] — 2026-06-11
+## [0.29.0] — 2026-06-11
+
+This release implements **RFC 012** (bounded history queries) and **RFC 024**
+(unusual repository semantics). It adds 22 new tests (249 total, 0 failures).
+No breaking changes.
+
+### Added
+
+**RFC 012 — Bounded history queries**
+
+New public types, re-exported from `endringer`:
+
+- `CommitQueryStart` enum: `Head | Commit(CommitId) | Ref(String)`.
+- `CommitQuery` struct: `start`, `max_count: Option<usize>`, `skip: usize`,
+  `since/until: Option<SystemTime>`, `order: SortOrder`. Constructor:
+  `CommitQuery::head_page(n)` — first `n` commits from HEAD, newest first.
+- `CommitQueryResult` struct: `commits: Vec<CommitInfo>`, `truncated: bool`.
+  `truncated` is `true` when `max_count` was reached and more commits exist.
+
+New `Repository` method (sync and async):
+
+- `query_commits(query: CommitQuery) -> Result<CommitQueryResult>` — bounded
+  walk starting from `Head`, a specific `CommitId`, or a named ref. Applies
+  `skip` (offset-style), timestamp filters (`since`/`until`), and sort order.
+  Uses the "fetch one extra" pattern for correct truncation detection.
+
+New `VcsBackend` default (returns `UnsupportedBackendFeature`). `GitBackend`
+overrides; `JjBackend` inherits the default.
+
+**RFC 024 — Unusual repository semantics**
+
+New integration test file `crates/endringer/tests/git_unusual_repos.rs`
+(20 tests) documenting and verifying behaviour for:
+
+- **Unborn repositories** (`git init`, no commits): `repository_info()` returns
+  `HeadState::Unborn`; `list_commits()` returns empty or errors gracefully;
+  `status_digest()` errors; `local_branches()` and `list_tags()` return empty.
+- **Detached HEAD**: `status_digest().current_branch == "(detached)"`;
+  `repository_info().head == HeadState::Detached`; `list_commits()` and
+  `query_commits()` succeed.
+- **Bare repositories**: open, `list_commits()`, `local_branches()`, and
+  `query_commits()` all succeed; `worktree_status()` returns empty or a
+  documented error.
+
+New docs page `docs/src/reference/unusual-repositories.md`: method behaviour
+matrix, `HeadState` variants, bare repository notes, unborn repository notes.
+Added to `docs/src/SUMMARY.md`.
+
+Tests:
+
+- `git_unusual_repos.rs` (20 tests): 6 unborn, 5 detached, 5 bare, 4
+  `query_commits` behaviour.
+- `async_tests.rs` (2 new): `query_commits` head page, truncation flag.
+
+### Changed
+
+- `docs/src/development/stabilization-dashboard.md` now also reflects RFC 012
+  and RFC 024 in the read surface completeness table.
+- RFC 012 and RFC 024 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 022** (tag API refinement) and **RFC 030**
 (release quality gates and stabilisation dashboard). It adds 3 new tests
