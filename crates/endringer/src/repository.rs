@@ -133,7 +133,9 @@ impl Repository {
     /// Creates an annotated tag at HEAD.
     ///
     /// Requires `user.name` and `user.email` to be set in git config.
-    /// On the jj backend this falls back to a lightweight tag.
+    /// On the jj backend this returns an error: jj does not support annotated
+    /// tags. Use [`create_tag`][Repository::create_tag] for a lightweight tag
+    /// instead.
     pub fn create_annotated_tag(&self, name: &str, message: &str) -> Result<()> {
         self.backend.create_annotated_tag(name, message)
     }
@@ -203,8 +205,9 @@ impl Repository {
     /// unstaged changes, and untracked files. Bare repositories always
     /// return an empty [`WorktreeStatus`].
     ///
-    /// **Note**: gitignore rules are not applied to untracked files in the
-    /// current implementation.
+    /// Gitignore rules are applied to untracked files. If exclude-stack
+    /// initialisation fails, the backend degrades gracefully and reports
+    /// all untracked files without filtering.
     pub fn worktree_status(&self) -> Result<WorktreeStatus> {
         self.backend.worktree_status()
     }

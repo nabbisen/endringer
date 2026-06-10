@@ -12,8 +12,8 @@
 //!
 //! # Annotated tags
 //!
-//! Jujutsu only supports lightweight tags. `create_annotated_tag` creates a
-//! lightweight tag and ignores the message, matching jj's own behaviour.
+//! Jujutsu only supports lightweight tags. `create_annotated_tag` returns an
+//! explicit error; callers must use `create_tag` or handle the error.
 
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
@@ -95,7 +95,8 @@ impl VcsBackend for JjBackend {
     /// Use [`create_tag`][Self::create_tag] for a lightweight tag instead.
     fn create_annotated_tag(&self, name: &str, _message: &str) -> Result<()> {
         anyhow::bail!(
-            "jj does not support annotated tags;              use create_tag(\"{name}\") for a lightweight tag instead"
+            "jj does not support annotated tags; \
+             use create_tag(\"{name}\") for a lightweight tag instead"
         )
     }
 

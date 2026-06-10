@@ -1,3 +1,8 @@
+> **Legacy document.** This file is not part of the current public documentation.
+> It is a single-file developer guide from the pre-mdBook era (v0.8.x), superseded
+> by the structured documentation under `docs/src/`. It is retained here for
+> historical reference only.
+
 # endringer — Developer Documentation
 
 This document describes the design decisions, architecture, and module responsibilities of `endringer`. For end-user usage instructions, please refer to [README.md](../README.md).

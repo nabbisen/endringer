@@ -74,7 +74,8 @@ cargo publish -p endringer-async
 | [v0.18.0] | 2026-05-04 | Linked worktrees, `TagAnnotation`, `commit_id_to_short_id` deprecation. |
 | [v0.18.1] | 2026-05-04 | Remove deprecated `commit_id_to_short_id`, crate READMEs, feature flag analysis. |
 | [v0.19.0] | 2026-05-04 | Bug fixes, README restructure, full docs/ site, codebase audit in ROADMAP. |
-| [v0.15.0] | 2026-05-04 | `GitBackend` lock-free via `ThreadSafeRepository`, `CommitInfo.parents`, `is_dirty()`, jj annotated tag error. |
+| [v0.19.2] | 2026-05-04 | `gix` bump to 0.83, minor bug fixes. |
+| [v0.20.0] | 2026-06-10 | Handoff/archive integrity (RFC 001), public contract consistency (RFC 002). |
 
 ---
 
@@ -294,3 +295,5 @@ Readiness criteria:
 [v0.17.0]: https://github.com/nabbisen/endringer/releases/tag/v0.17.0
 [v0.18.0]: https://github.com/nabbisen/endringer/releases/tag/v0.18.0
 [v0.19.0]: https://github.com/nabbisen/endringer/releases/tag/v0.19.0
+[v0.19.2]: https://github.com/nabbisen/endringer/releases/tag/v0.19.2
+[v0.20.0]: https://github.com/nabbisen/endringer/releases/tag/v0.20.0

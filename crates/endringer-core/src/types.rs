@@ -277,10 +277,11 @@ pub struct StatusEntry {
 ///
 /// ## Untracked files
 ///
-/// `untracked` lists every file present in the working tree that the index
-/// does not track. **Gitignore rules are not applied in the current
-/// implementation** — ignored files will appear here. A future release will
-/// honour `.gitignore`.
+/// `untracked` lists files present in the working tree that are not tracked
+/// by the index. Active gitignore rules (`.gitignore`, `info/exclude`, global
+/// excludes) are applied so that ignored files do not appear here. If the
+/// exclude stack cannot be initialised, the backend degrades gracefully and
+/// reports all untracked files without filtering.
 #[derive(Clone, Debug, Default)]
 pub struct WorktreeStatus {
     /// Files whose staged blob OID differs from the HEAD tree

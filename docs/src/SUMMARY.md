@@ -17,6 +17,7 @@
 - [API overview](reference/api-overview.md)
 - [Types](reference/types.md)
 - [Backends: Git and Jujutsu](reference/backends.md)
+- [Public contract statements](reference/contract.md)
 
 ---
 

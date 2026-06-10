@@ -7,6 +7,72 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.20.0] — 2026-06-10
+
+This release implements **RFC 001** (handoff, archive, and release-manifest
+integrity) and **RFC 002** (public contract consistency and documentation
+tests). There are no public API changes. All 88 tests pass.
+
+### Fixed
+
+- **Stale rustdoc: gitignore filtering.** `WorktreeStatus`, the `worktree_status`
+  docs in both `endringer-core` and the `endringer` façade, and
+  `WorktreeStatus` previously said gitignore rules are *not* applied to
+  untracked files. This was correct for v0.16.0 but stale since v0.17.0, which
+  added the content-hash fallback and gitignore-aware untracked. The doc now
+  accurately states that gitignore rules are applied, with a note on the
+  graceful-degradation fallback path. *(RFC 002)*
+
+- **Stale rustdoc: jj annotated-tag fallback.** The `Repository::create_annotated_tag`
+  doc claimed the jj backend falls back to a lightweight tag. The actual
+  implementation (since v0.14.0) returns an explicit error. The jj backend
+  module doc carried the same incorrect claim. Both are corrected. *(RFC 002)*
+
+- **Duplicate release-history row in `ROADMAP.md`.** The table listed
+  `v0.15.0` twice; the second row was a mis-labelled duplicate of `v0.14.0`
+  content. Removed the duplicate. *(RFC 001)*
+
+- **Stale spacing artifact in jj error message.** The `create_annotated_tag`
+  error message had extra internal whitespace (`"does not support annotated tags;
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;use create_tag…"`). Fixed.
+
+### Added
+
+- **`rfcs/` directory.** The source tree and release archive now include the
+  full RFC directory: `rfcs/000-rfc-lifecycle-policy.md`, `rfcs/README.md`
+  (index), `rfcs/proposed/001`–`031`, and the `done/` and `archive/` folders.
+  *(RFC 001)*
+
+- **`RELEASE-MANIFEST.md`.** A machine-readable-friendly record of required
+  files, required directories, excluded paths, publish order, and the
+  verification command for release archives. *(RFC 001)*
+
+- **`scripts/check-public-contract.sh`.** A CI-runnable shell script that
+  searches for known stale phrases in source and docs and verifies required
+  project files are present. Runs in CI after this release. *(RFC 002)*
+
+- **`scripts/verify-release-manifest.sh`.** Verifies an unpacked release
+  archive against `RELEASE-MANIFEST.md`. Run this on the archive before
+  tagging. *(RFC 001)*
+
+- **`docs/src/reference/contract.md`.** A new mdBook page cataloguing
+  high-value behavioral contracts: gitignore filtering, jj tag semantics, diff
+  ordering, tag peel semantics, no public `gix` types, stash ordering,
+  concurrency model, and the no-external-binaries-at-runtime guarantee.
+  *(RFC 002)*
+
+- **`docs/src/SUMMARY.md`** now includes `contract.md` under the Reference
+  section. *(RFC 002)*
+
+### Changed
+
+- **`docs/README.md` (legacy)** moved to `docs/legacy/README-pre-mdbook.md`
+  and marked with a prominent legacy banner. This file was a single-file
+  Japanese developer document from the pre-mdBook era, superseded by
+  `docs/src/` in v0.19.0. *(RFC 001)*
+
+---
+
 ## [0.19.2] — 2026-05-04
 
 ### Changed
