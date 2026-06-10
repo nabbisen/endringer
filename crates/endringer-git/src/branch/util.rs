@@ -4,7 +4,11 @@ use gix::Repository;
 
 use crate::util::{gix_id_to_commit_id, seconds_to_systemtime};
 
-/// Returns branches whose ref names start with `prefix`.
+/// Returns branches whose ref names start with `prefix`,
+/// sorted ascending by full ref name.
+///
+/// The sort is enforced at the backend level so consumers can rely on a
+/// stable, deterministic order (ascending by `full_name`).
 pub(super) fn branches(repository: &Repository, prefix: &str) -> Result<Vec<BranchInfo>> {
     let mut result = Vec::new();
 
@@ -35,5 +39,7 @@ pub(super) fn branches(repository: &Repository, prefix: &str) -> Result<Vec<Bran
         });
     }
 
+    // Contract: ascending by full ref name.
+    result.sort_by(|a, b| a.full_name.cmp(&b.full_name));
     Ok(result)
 }

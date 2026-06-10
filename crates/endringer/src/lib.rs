@@ -31,10 +31,11 @@
 //! async facade.
 
 pub use endringer_core::types::{
-    AheadBehind, BackendKind, BlameEntry, BranchInfo, ChangeKind, CommitId,
-    CommitIdFromHexError, CommitInfo, DiffSummary, ObjectId, ObjectIdFromHexError,
-    SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation,
-    TagInfo, WorktreeInfo, WorktreeStatus,
+    AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
+    CommitId, CommitIdFromHexError, CommitInfo, DiffSummary, HeadState, ObjectFormat,
+    ObjectId, ObjectIdFromHexError, RepositoryCapabilities, RepositoryInfo, SortOrder,
+    StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation, TagInfo,
+    WorktreeInfo, WorktreeStatus,
 };
 
 /// The [`VcsBackend`] trait, re-exported for implementing custom backends.

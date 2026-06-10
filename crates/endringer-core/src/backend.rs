@@ -28,8 +28,9 @@ use std::time::SystemTime;
 use anyhow::Result;
 
 use crate::types::{
-    AheadBehind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
+    TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
 /// Common interface implemented by every VCS backend.
@@ -89,6 +90,13 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// See [`AheadBehind`] for the full contract and edge cases.
     fn ahead_behind(&self, local: &CommitId, upstream: &CommitId) -> Result<AheadBehind>;
+
+    /// Returns a lightweight metadata snapshot of the repository.
+    ///
+    /// Includes backend kind, working tree path, HEAD state, object format,
+    /// and backend capabilities. All fields are a fresh read; this is not a
+    /// subscription.
+    fn repository_info(&self) -> Result<RepositoryInfo>;
 
     // ── Optional-empty methods ─────────────────────────────────────────── //
     //
@@ -155,6 +163,33 @@ pub trait VcsBackend: Send + Sync {
     // ── Optional-unsupported methods ───────────────────────────────────── //
     //
     // These have a truthful default but backends should override where possible.
+
+    /// Returns tracking metadata and divergence data for `branch`.
+    ///
+    /// Default: unsupported-feature error.
+    fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> {
+        anyhow::bail!("backend does not support branch_tracking({branch:?})")
+    }
+
+    /// Returns tracking metadata for all local branches, sorted ascending
+    /// by full ref name.
+    ///
+    /// Default: unsupported-feature error.
+    fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
+        anyhow::bail!("backend does not support local_branch_tracking")
+    }
+
+    /// Returns `true` if `branch` has been merged into `target`.
+    ///
+    /// Equivalent to `is_ancestor(branch_tip, target_tip)` but with named
+    /// branches, preventing callers from accidentally reversing the arguments.
+    ///
+    /// Default: unsupported-feature error.
+    fn is_merged_into(&self, branch: &str, target: &str) -> Result<bool> {
+        anyhow::bail!(
+            "backend does not support is_merged_into({branch:?}, {target:?})"
+        )
+    }
 
     /// Returns ahead/behind counts for the configured upstream of `branch`.
     ///

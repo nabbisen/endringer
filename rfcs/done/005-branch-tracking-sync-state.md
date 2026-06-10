@@ -1,6 +1,6 @@
 # RFC 005 — Branch tracking and sync state
 
-**Status.** Proposed  
+**Status.** Implemented (v0.22.0)  
 **Priority.** P1  
 **Target band.** v0.22.x  
 **Breaking change.** No if implemented with new types/methods; adding fields to `BranchInfo` is deferred  

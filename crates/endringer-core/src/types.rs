@@ -39,7 +39,118 @@ pub struct AheadBehind {
 
 // ── BranchInfo ────────────────────────────────────────────────────────────── //
 
-/// Information about a branch (local or remote).
+/// Tracking and divergence metadata for a local branch.
+///
+/// Returned by [`crate::backend::VcsBackend::branch_tracking`] and
+/// [`crate::backend::VcsBackend::local_branch_tracking`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BranchTrackingInfo {
+    /// Short local branch name (e.g. `main`).
+    pub branch: String,
+    /// Full ref name (e.g. `refs/heads/main`).
+    pub full_name: String,
+    /// Commit at the branch tip.
+    pub tip_commit_id: CommitId,
+    /// Configured upstream full ref name, if any.
+    pub upstream: Option<String>,
+    /// `true` if an upstream is configured but no longer resolvable locally
+    /// (e.g. the remote-tracking ref was pruned after a remote branch deletion).
+    pub upstream_gone: bool,
+    /// Ahead/behind counts relative to the upstream tip.
+    /// `None` when no upstream is configured or when the upstream is gone.
+    pub ahead_behind: Option<AheadBehind>,
+}
+
+// ── RepositoryInfo types (RFC 009) ─────────────────────────────────────────── //
+
+/// The object hashing algorithm used by a repository.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ObjectFormat {
+    /// SHA-1 (the default for Git repositories).
+    Sha1,
+    /// SHA-256 (opt-in via `extensions.objectFormat = sha256`).
+    Sha256,
+    /// An object format reported by gix that endringer does not model.
+    /// The string carries the raw format name for diagnostics.
+    Unknown(String),
+}
+
+/// The state of the HEAD reference.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum HeadState {
+    /// HEAD points at a branch that has at least one commit.
+    Attached {
+        /// Short branch name (e.g. `main`).
+        branch: String,
+        /// Full ref name (e.g. `refs/heads/main`).
+        full_name: String,
+        /// The commit HEAD resolves to.
+        commit_id: CommitId,
+    },
+    /// HEAD is detached at a specific commit (not on any branch).
+    Detached {
+        /// The commit HEAD points to directly.
+        commit_id: CommitId,
+    },
+    /// HEAD names a branch that has no commits yet (fresh `git init`).
+    Unborn {
+        /// The target branch name if it can be determined, or `None`.
+        branch: Option<String>,
+    },
+    /// HEAD reference is absent or unreadable.
+    Missing,
+}
+
+/// Which features this backend and repository support.
+///
+/// Capabilities are read at the time of the `repository_info()` call.
+/// They are not a subscription; external mutations may change them.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RepositoryCapabilities {
+    /// Repository has a working tree (not bare).
+    pub working_tree: bool,
+    /// [`VcsBackend::create_tag`] is supported for this repository.
+    pub tag_create_lightweight: bool,
+    /// [`VcsBackend::create_annotated_tag`] is supported for this repository.
+    pub tag_create_annotated: bool,
+    /// [`VcsBackend::delete_tag`] is supported for this repository.
+    pub tag_delete: bool,
+    /// [`VcsBackend::branch_tracking`] and related methods are supported.
+    pub branch_tracking: bool,
+    /// Operation/conflict state reads (RFC 008) are supported.
+    pub operation_state: bool,
+    /// Conflict state reads (RFC 008) are supported.
+    pub conflict_state: bool,
+    /// jj-native concepts (op log, change IDs) are exposed — false until a
+    /// future jj-native RFC.
+    pub jj_native_state: bool,
+}
+
+/// Lightweight repository metadata snapshot.
+///
+/// Returned by [`crate::backend::VcsBackend::repository_info`].
+/// All fields are a fresh read at call time; this is not a subscription.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RepositoryInfo {
+    /// Which VCS backend opened this repository.
+    pub backend: BackendKind,
+    /// Directory name of the working tree (or git-dir for bare repos).
+    pub repo_name: String,
+    /// Absolute path to the working tree, or `None` for bare repositories.
+    pub workdir: Option<std::path::PathBuf>,
+    /// Absolute path to the VCS metadata directory (`.git/` or `.jj/`).
+    pub vcs_dir: std::path::PathBuf,
+    /// Whether this is a bare repository (no working tree).
+    pub is_bare: bool,
+    /// Object hashing algorithm in use.
+    pub object_format: ObjectFormat,
+    /// Current HEAD state.
+    pub head: HeadState,
+    /// Backend and repository capabilities.
+    pub capabilities: RepositoryCapabilities,
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BranchInfo {
     /// Short branch name, e.g. `main`.

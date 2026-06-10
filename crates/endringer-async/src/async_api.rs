@@ -6,7 +6,11 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer::repository::{Repository, jj_repository, repository};
-use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus, AheadBehind};
+use endringer::{
+    AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
+    TagInfo, WorktreeInfo, WorktreeStatus,
+};
 
 /// Async wrapper around [`Repository`].
 ///
@@ -190,5 +194,29 @@ impl AsyncRepository {
     ) -> Result<Option<AheadBehind>> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.branch_ahead_behind(&branch)).await?
+    }
+
+    // ── Repository info ────────────────────────────────────────────────── //
+
+    pub async fn repository_info(&self) -> Result<RepositoryInfo> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.repository_info()).await?
+    }
+
+    // ── Branch tracking ────────────────────────────────────────────────── //
+
+    pub async fn branch_tracking(&self, branch: String) -> Result<BranchTrackingInfo> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.branch_tracking(&branch)).await?
+    }
+
+    pub async fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.local_branch_tracking()).await?
+    }
+
+    pub async fn is_merged_into(&self, branch: String, target: String) -> Result<bool> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.is_merged_into(&branch, &target)).await?
     }
 }

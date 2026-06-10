@@ -194,37 +194,53 @@ fn commit_parent_ids(repo: &Repository, oid: gix::ObjectId) -> Result<Vec<gix::O
 
 // ── branch upstream resolution ───────────────────────────────────────────── //
 
-/// Resolves the configured upstream ref for a local branch.
+/// Resolves the configured upstream full ref name for a local branch.
 ///
-/// Returns `None` when no upstream is configured.
-/// Returns `Err` when the configured upstream ref no longer exists locally.
-pub(crate) fn branch_ahead_behind(
+/// Reads `branch.<name>.remote` and `branch.<name>.merge` from git config.
+/// Returns `None` when no upstream is configured (either key missing).
+/// Does **not** check whether the resolved ref exists.
+///
+/// | Config | Resolved upstream |
+/// |---|---|
+/// | `remote=origin`, `merge=refs/heads/main` | `refs/remotes/origin/main` |
+/// | `remote=.`, `merge=refs/heads/foo` | `refs/heads/foo` |
+/// | either key absent | `None` |
+pub(crate) fn branch_upstream_ref(
     repo: &Repository,
     branch: &str,
-) -> Result<Option<AheadBehind>> {
+) -> Result<Option<String>> {
     let config = repo.config_snapshot();
-
-    // gix config: string_by(section, subsection, value_name)
-    // For `branch.main.remote`: section="branch", subsection=Some("main"), value="remote"
     let branch_bstr = gix::bstr::BStr::new(branch.as_bytes());
 
     let remote = config.string_by("branch", Some(branch_bstr), "remote")
         .map(|s| s.to_string());
-    let merge = config.string_by("branch", Some(branch_bstr), "merge")
+    let merge  = config.string_by("branch", Some(branch_bstr), "merge")
         .map(|s| s.to_string());
 
-    let upstream_ref = match (remote, merge) {
-        (None, _) | (_, None) => return Ok(None),
+    Ok(match (remote, merge) {
+        (None, _) | (_, None) => None,
         (Some(remote), Some(merge)) => {
             if remote == "." {
-                merge
+                Some(merge)
             } else {
-                let short = merge
-                    .strip_prefix("refs/heads/")
-                    .unwrap_or(&merge);
-                format!("refs/remotes/{remote}/{short}")
+                let short = merge.strip_prefix("refs/heads/").unwrap_or(&merge);
+                Some(format!("refs/remotes/{remote}/{short}"))
             }
         }
+    })
+}
+
+/// Returns ahead/behind counts for the configured upstream of `branch`.
+///
+/// Returns `Ok(None)` when the branch has no configured upstream.
+/// Returns an error when the configured upstream ref no longer exists locally.
+pub(crate) fn branch_ahead_behind(
+    repo: &Repository,
+    branch: &str,
+) -> Result<Option<AheadBehind>> {
+    let upstream_ref = match branch_upstream_ref(repo, branch)? {
+        None => return Ok(None),
+        Some(r) => r,
     };
 
     let local_ref = format!("refs/heads/{branch}");

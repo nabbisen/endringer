@@ -14,13 +14,9 @@ Open for review and discussion. Implementation may not yet have begun.
 
 | ID | Title | Priority | Target band |
 |----|-------|----------|-------------|
-| [001](./done/001-handoff-archive-release-integrity.md) | Handoff, archive, and release-manifest integrity | P0 | v0.20.x |
-| [002](./done/002-public-contract-consistency.md) | Public contract consistency and documentation tests | P0 | v0.20.x |
-| [005](./proposed/005-branch-tracking-sync-state.md) | Branch tracking and sync state | P1 | v0.22.x |
 | [006](./proposed/006-typed-public-error-model.md) | Typed public error model | P1 | v0.23.x |
 | [007](./proposed/007-jj-real-repository-verification.md) | jj real-repository verification | P1 | v0.24.x |
 | [008](./proposed/008-read-side-operation-conflict-state.md) | Read-side operation and conflict state | P2 | v0.25.x |
-| [009](./proposed/009-repository-info-capabilities.md) | Repository information and capability discovery | P2 | v0.22.x |
 | [010](./proposed/010-point-in-time-reads-tree-snapshots.md) | Point-in-time reads and tree snapshots | P2 | v0.26.x |
 | [011](./proposed/011-remote-reference-inventory.md) | Remote and reference inventory | P3 | v0.27.x+ |
 | [012](./proposed/012-bounded-history-queries.md) | Bounded history queries | P3 | v0.27.x+ |
@@ -56,6 +52,8 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [003](./done/003-vcsbackend-default-impls-extension-stance.md) | `VcsBackend` default implementations and extension stance | v0.21.0 |
 | [031](./done/031-object-identity-foundation.md) | Object identity foundation (`ObjectId`) | v0.21.0 |
 | [004](./done/004-ahead-behind-graph-computation.md) | Ahead/behind graph computation | v0.21.0 |
+| [005](./done/005-branch-tracking-sync-state.md) | Branch tracking and sync state | v0.22.0 |
+| [009](./done/009-repository-info-capabilities.md) | Repository information and capability discovery | v0.22.0 |
 
 ---
 

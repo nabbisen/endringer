@@ -5,11 +5,12 @@ use std::time::SystemTime;
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
-    AheadBehind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
+    TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
-use crate::{blame, branch, commit, diff, graph, object, stash, status, submodule, tag, worktree};
+use crate::{blame, branch, commit, diff, graph, info, object, stash, status, submodule, tag, worktree};
 
 /// Git backend.
 ///
@@ -119,6 +120,22 @@ impl VcsBackend for GitBackend {
 
     fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
         graph::branch_ahead_behind(&repo!(self), branch)
+    }
+
+    fn repository_info(&self) -> Result<RepositoryInfo> {
+        info::repository_info(&repo!(self), endringer_core::types::BackendKind::Git)
+    }
+
+    fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> {
+        branch::branch_tracking(&repo!(self), branch)
+    }
+
+    fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
+        branch::local_branch_tracking(&repo!(self))
+    }
+
+    fn is_merged_into(&self, b: &str, target: &str) -> Result<bool> {
+        branch::is_merged_into(&repo!(self), b, target)
     }
 
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {

@@ -5,117 +5,72 @@ All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
 
-## [0.21.0] — 2026-06-10
+## [0.22.0] — 2026-06-10
 
-This release implements **RFC 003** (`VcsBackend` default implementations and
-extension stance), **RFC 031** (`ObjectId` foundation type), and **RFC 004**
-(ahead/behind graph computation). It is the v0.21.x foundation pass.
+This release implements **RFC 005** (branch tracking and sync state) and
+**RFC 009** (repository information and capability discovery), with the
+branch-listing sort-order contract from RFC 005 applied to `local_branches()`
+and `remote_branches()`. It adds 21 new tests (146 total, 0 failures).
 
-**All 125 tests pass** (up from 88 in v0.20.0; 37 new tests across three
-integration test files and one new unit test module).
+### Breaking changes
+
+- `VcsBackend` now requires implementing `repository_info` (new required core
+  method). Custom backends implementing the trait directly must add an
+  implementation; the `GitBackend` and `JjBackend` both do.
 
 ### Added
 
-**`VcsBackend` default implementations (RFC 003)**
+**RFC 005 — Branch tracking and sync state**
 
-- Optional-empty defaults: `remote_url` → `None`; `submodules`,
-  `stash_entries`, `worktrees` → `Ok(vec![])`. Custom backends no longer
-  need to implement these unless they have real data to return.
-- Write-side exception defaults: `create_tag`, `create_annotated_tag`,
-  `delete_tag` now default to an unsupported-feature error rather than
-  being required. Git and jj backends override all three as before.
-- New `branch_ahead_behind` method on `VcsBackend` with an unsupported
-  default; overridden by `GitBackend` and delegated by `JjBackend`.
-- Rustdoc on `VcsBackend` now states the pre-v1.0 extension stance:
-  the trait is implementable but not fully stable; new methods will carry
-  defaults where a truthful default exists; `Repository` consumers have
-  stronger guarantees than custom-backend implementors.
+- `BranchTrackingInfo` struct: `branch`, `full_name`, `tip_commit_id`,
+  `upstream: Option<String>`, `upstream_gone: bool`,
+  `ahead_behind: Option<AheadBehind>`. Public and re-exported from `endringer`.
+- `Repository::branch_tracking(branch) -> Result<BranchTrackingInfo>` —
+  tracking metadata and divergence for a single local branch.
+- `Repository::local_branch_tracking() -> Result<Vec<BranchTrackingInfo>>` —
+  tracking metadata for all local branches, sorted ascending by full ref name.
+- `Repository::is_merged_into(branch, target) -> Result<bool>` — whether
+  `branch` has been merged into `target`. Named to prevent argument reversal.
+- `VcsBackend::branch_tracking`, `local_branch_tracking`, and
+  `is_merged_into` have unsupported-feature error defaults (RFC 003
+  convention); `GitBackend` and `JjBackend` override all three.
+- Upstream resolution handles `remote = "."` (local tracking) and
+  `upstream_gone` (configured upstream ref no longer resolvable locally).
+- Async wrappers: `AsyncRepository::branch_tracking`, `local_branch_tracking`,
+  `is_merged_into`.
+- 9 new integration tests in `git_branch_tracking.rs`.
+- 3 new async parity tests.
 
-**`ObjectId` foundation type (RFC 031)**
+**RFC 005 — Branch-listing sort order (explicit contract)**
 
-- New public types in `endringer-core` (re-exported from `endringer`):
-  - `ObjectId` — opaque identifier for any Git/jj object (blob, tree,
-    commit, tag). Mirrors `CommitId` (SHA-1 / SHA-256, hex encoding,
-    `from_hex` / `from_bytes` / `as_bytes` / `short` / `Display`, `Ord`).
-  - `ObjectIdFromHexError` — error type from `ObjectId::from_hex`.
-- `CommitId::to_object_id(&self) -> ObjectId` — lossless conversion.
-- `From<CommitId> for ObjectId` — infallible; a commit id is always a
-  valid object id.
-- `ObjectId::assume_commit(self) -> CommitId` — named conversion for
-  callers that have verified (or assert) the object is a commit; avoids
-  a silent `From<ObjectId> for CommitId` that would discard kind information.
-- `endringer-git/src/util.rs`: added `gix_id_to_object_id` helper
-  alongside the existing `gix_id_to_commit_id`.
-- **`endringer-core/src/types.rs` split**: identity types (`CommitId`,
-  `ObjectId`, their error types, and the shared hex helpers) have been
-  extracted into `endringer-core/src/types/identity.rs` following the
-  Rust 2018 module style. All public paths are unchanged
-  (`endringer_core::types::CommitId`, etc.) — the move is purely
-  structural.
+- `local_branches()` and `remote_branches()` now guarantee ascending order
+  by full ref name, enforced at the backend level. Previously the order was
+  gix iteration order (ascending in practice but uncontracted). `local_branch_tracking()`
+  shares the same contract.
+- New integration tests `local_branches_sorted` and `local_branch_tracking_sorted`
+  verify the contract.
 
-**`AheadBehind` type and ahead/behind API (RFC 004)**
+**RFC 009 — Repository information and capability discovery**
 
-- New public type `AheadBehind { ahead: usize, behind: usize,
-  merge_base: Option<CommitId> }` in `endringer-core`, re-exported from
-  `endringer`.
-- `Repository::ahead_behind(local, upstream) -> Result<AheadBehind>` —
-  symmetric-difference count equivalent to
-  `git rev-list --left-right --count local...upstream`. Cost is
-  O(commits between the merge base and the two tips), not O(full history).
-- `Repository::branch_ahead_behind(branch) -> Result<Option<AheadBehind>>`
-  — resolves the configured upstream of a local branch via
-  `branch.<name>.remote` / `branch.<name>.merge` git config; returns
-  `Ok(None)` when no upstream is configured.
-- Both methods available on `AsyncRepository` in `endringer-async`.
-- Git implementation uses a two-pass symmetric-difference BFS:
-  pass 1 propagates LEFT/RIGHT reachability to every ancestor; pass 2
-  counts LEFT-only commits as `ahead` and RIGHT-only as `behind`. Common
-  ancestors (BOTH) are not counted. Handles identical tips, fast-forward,
-  diverged, merge commits, and unrelated histories.
-- `GitBackend` config reading for branch upstream uses
-  `gix::config::Snapshot::string_by` with `branch.<name>` subsection
-  lookup.
-- `JjBackend` delegates `ahead_behind` and `branch_ahead_behind` to its
-  underlying `GitBackend`.
+- `RepositoryInfo` struct: `backend`, `repo_name`, `workdir`, `vcs_dir`,
+  `is_bare`, `object_format`, `head`, `capabilities`.
+- `ObjectFormat` enum: `Sha1 | Sha256 | Unknown(String)`, `#[non_exhaustive]`.
+- `HeadState` enum: `Attached { branch, full_name, commit_id } | Detached { commit_id } |
+  Unborn { branch } | Missing`, `#[non_exhaustive]`.
+- `RepositoryCapabilities` struct: `working_tree`, tag write flags, `branch_tracking`,
+  `operation_state` (false until RFC 008), `jj_native_state` (false until a future RFC).
+- `Repository::repository_info() -> Result<RepositoryInfo>` — fresh metadata snapshot.
+- `JjBackend` overrides `repo_name`, `vcs_dir`, `backend`, and `capabilities` to
+  reflect the jj project root rather than the underlying git store.
+- Async wrapper: `AsyncRepository::repository_info`.
+- New `endringer-git/src/info.rs` module.
+- 6 new integration tests in `git_repository_info.rs`.
+- 3 new async parity tests.
 
 ### Changed
 
-- `VcsBackend` now has `ahead_behind` as a **required** method (no safe
-  default exists — an empty result would be misleading). Custom backends
-  must implement it. The method count increases from 23 to 24 required
-  methods, but the 4 optional-empty methods and 4 write-side defaults
-  reduce the *minimum* implementation burden from 23 to 16 methods for
-  backends that don't need tags or metadata.
-
-### Internal
-
-- `endringer-core/src/types.rs`: added `AheadBehind`; identity types
-  split to `types/identity.rs`.
-- `endringer-git/src/graph.rs`: rewrote with two-pass BFS; removed the
-  naive double-walk sketch; uses gix parent-ID iteration via
-  `ObjectId::from_hex(&**p)` on the `&BStr` parent refs.
-- `endringer-git/src/backend.rs`: dispatches `ahead_behind` and
-  `branch_ahead_behind` to `graph::` module.
-- All 5 RFC files moved from `rfcs/proposed/` to `rfcs/done/` (RFC 001,
-  002 → v0.20.0; RFC 003, 031, 004 → v0.21.0).
-
-### Tests
-
-- `crates/endringer/tests/git_graph.rs` (10 tests): identical tips,
-  local one ahead, local two behind, both diverged, unrelated histories,
-  merge commit in history, missing commit ID error, and three branch
-  upstream tests. Every git case asserts exact parity with
-  `git rev-list --left-right --count`.
-- `crates/endringer/tests/vcsbackend_defaults.rs` (9 tests): RFC 003
-  acceptance — optional-empty defaults return empty, write-side defaults
-  return errors, minimal backend compiles and constructs via
-  `Repository::with_backend`.
-- `crates/endringer-async/tests/async_tests.rs`: 3 new async parity
-  tests for `ahead_behind` and `branch_ahead_behind`.
-- `crates/endringer-core/src/types/identity.rs`: 11 unit tests for
-  `CommitId`, `ObjectId`, and their conversions.
+- RFC 005 and RFC 009 moved from `rfcs/proposed/` to `rfcs/done/`.
 
 ---
 
@@ -206,6 +161,8 @@ extension stance), **RFC 031** (`ObjectId` identity foundation), and **RFC 004**
 - `rfcs/README.md` updated with Implemented table.
 
 ---
+
+## [0.20.0] — 2026-06-10
 
 This release implements **RFC 001** (handoff, archive, and release-manifest
 integrity) and **RFC 002** (public contract consistency and documentation

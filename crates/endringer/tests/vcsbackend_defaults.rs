@@ -73,6 +73,9 @@ impl VcsBackend for MinimalBackend {
     fn ahead_behind(&self, _local: &CommitId, _upstream: &CommitId) -> Result<AheadBehind> {
         anyhow::bail!("not implemented")
     }
+    fn repository_info(&self) -> Result<endringer::RepositoryInfo> {
+        anyhow::bail!("not implemented")
+    }
     // All optional methods left at their defaults.
 }
 
@@ -132,6 +135,27 @@ fn default_delete_tag_returns_error() {
 fn default_branch_ahead_behind_returns_error() {
     let b = MinimalBackend;
     let err = b.branch_ahead_behind("main").unwrap_err();
+    assert!(err.to_string().contains("does not support"));
+}
+
+#[test]
+fn default_branch_tracking_returns_error() {
+    let b = MinimalBackend;
+    let err = b.branch_tracking("main").unwrap_err();
+    assert!(err.to_string().contains("does not support"));
+}
+
+#[test]
+fn default_local_branch_tracking_returns_error() {
+    let b = MinimalBackend;
+    let err = b.local_branch_tracking().unwrap_err();
+    assert!(err.to_string().contains("does not support"));
+}
+
+#[test]
+fn default_is_merged_into_returns_error() {
+    let b = MinimalBackend;
+    let err = b.is_merged_into("feature", "main").unwrap_err();
     assert!(err.to_string().contains("does not support"));
 }
 

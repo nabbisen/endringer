@@ -207,3 +207,49 @@ async fn async_branch_ahead_behind_no_upstream() {
     let result = repo.branch_ahead_behind("main".to_string()).await.unwrap();
     assert_eq!(result, None);
 }
+
+// ── RFC 005 / RFC 009: async parity ──────────────────────────────────────── //
+
+#[tokio::test]
+async fn async_repository_info_matches_sync() {
+    use endringer_async::AsyncRepository;
+    use endringer::repository::repository;
+
+    let f = Fixture::new();
+
+    let sync_repo  = repository(f.path()).unwrap();
+    let async_repo = AsyncRepository::open(f.path()).await.unwrap();
+
+    let sync_info  = sync_repo.repository_info().unwrap();
+    let async_info = async_repo.repository_info().await.unwrap();
+
+    assert_eq!(sync_info.backend,       async_info.backend);
+    assert_eq!(sync_info.is_bare,       async_info.is_bare);
+    assert_eq!(sync_info.object_format, async_info.object_format);
+    assert_eq!(sync_info.repo_name,     async_info.repo_name);
+}
+
+#[tokio::test]
+async fn async_local_branch_tracking_no_panic() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let list = repo.local_branch_tracking().await.unwrap();
+    // At minimum "main" should appear.
+    assert!(list.iter().any(|b| b.branch == "main"));
+}
+
+#[tokio::test]
+async fn async_is_merged_into_parity() {
+    use endringer_async::AsyncRepository;
+    use endringer::repository::repository;
+
+    let f = Fixture::new();
+    // Both branches point at the same commit — merged into itself is true.
+    let sync_repo  = repository(f.path()).unwrap();
+    let async_repo = AsyncRepository::open(f.path()).await.unwrap();
+
+    let sync_result  = sync_repo.is_merged_into("main", "main").unwrap();
+    let async_result = async_repo.is_merged_into("main".to_string(),
+                                                  "main".to_string()).await.unwrap();
+    assert_eq!(sync_result, async_result);
+}

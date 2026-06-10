@@ -20,7 +20,7 @@ use std::time::SystemTime;
 
 use anyhow::{Result, bail};
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{AheadBehind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
+use endringer_core::types::{AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo, DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
 use endringer_git::GitBackend;
 
 /// Jujutsu backend backed by the repository's underlying git object store.
@@ -108,6 +108,36 @@ impl VcsBackend for JjBackend {
     fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> { self.git.is_ancestor(candidate, descendant) }
     fn ahead_behind(&self, local: &CommitId, upstream: &CommitId) -> Result<AheadBehind> { self.git.ahead_behind(local, upstream) }
     fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> { self.git.branch_ahead_behind(branch) }
+
+    fn repository_info(&self) -> Result<RepositoryInfo> {
+        let mut info = self.git.repository_info()?;
+        // Override backend kind and repo_name to reflect the jj project root.
+        info.backend = endringer_core::types::BackendKind::Jj;
+        info.repo_name = self
+            .root
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_owned();
+        // vcs_dir should point to .jj/, not the underlying git store.
+        info.vcs_dir = self.root.join(".jj");
+        // Recalculate capabilities for jj.
+        info.capabilities = endringer_core::types::RepositoryCapabilities {
+            working_tree: info.workdir.is_some(),
+            tag_create_lightweight: true,
+            tag_create_annotated: false, // jj does not support annotated tags
+            tag_delete: true,
+            branch_tracking: true,
+            operation_state: false,
+            conflict_state: false,
+            jj_native_state: false,
+        };
+        Ok(info)
+    }
+
+    fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> { self.git.branch_tracking(branch) }
+    fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> { self.git.local_branch_tracking() }
+    fn is_merged_into(&self, b: &str, target: &str) -> Result<bool> { self.git.is_merged_into(b, target) }
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> { self.git.blame(path) }
     fn worktree_status(&self) -> Result<WorktreeStatus> { self.git.worktree_status() }
     fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>> { self.git.file_at_commit(path, commit_id) }

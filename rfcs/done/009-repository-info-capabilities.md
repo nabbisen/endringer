@@ -1,6 +1,6 @@
 # RFC 009 — Repository information and capability discovery
 
-**Status.** Proposed  
+**Status.** Implemented (v0.22.0)  
 **Priority.** P2  
 **Target band.** v0.22.x  
 **Breaking change.** No  

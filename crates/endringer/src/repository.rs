@@ -6,8 +6,9 @@ use std::time::SystemTime;
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
-    AheadBehind, BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary,
-    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
+    CommitInfo, DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest,
+    SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -209,6 +210,40 @@ impl Repository {
     /// Returns `Err` when the configured upstream ref no longer exists locally.
     pub fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
         self.backend.branch_ahead_behind(branch)
+    }
+
+    // ── Repository info ────────────────────────────────────────────────── //
+
+    /// Returns a lightweight metadata snapshot of the repository.
+    ///
+    /// Includes backend kind, working tree path, HEAD state, object format,
+    /// and backend capabilities. All fields are a fresh read at call time.
+    pub fn repository_info(&self) -> Result<RepositoryInfo> {
+        self.backend.repository_info()
+    }
+
+    // ── Branch tracking ────────────────────────────────────────────────── //
+
+    /// Returns tracking metadata and divergence data for a single local branch.
+    ///
+    /// Includes whether the configured upstream exists, and ahead/behind counts
+    /// relative to that upstream.
+    pub fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> {
+        self.backend.branch_tracking(branch)
+    }
+
+    /// Returns tracking metadata for all local branches, sorted ascending
+    /// by full ref name.
+    pub fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
+        self.backend.local_branch_tracking()
+    }
+
+    /// Returns `true` if `branch` has been merged into `target`.
+    ///
+    /// Equivalent to `is_ancestor(branch_tip, target_tip)` but named to
+    /// prevent accidental argument reversal.
+    pub fn is_merged_into(&self, branch: &str, target: &str) -> Result<bool> {
+        self.backend.is_merged_into(branch, target)
     }
 
     // ── Blame ──────────────────────────────────────────────────────────── //
