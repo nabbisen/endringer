@@ -30,6 +30,8 @@
 //! Add the [`endringer-async`] crate for a `tokio::task::spawn_blocking`-based
 //! async facade.
 
+pub use endringer_core::error::{Error, NotFoundKind, Result};
+
 pub use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
     CommitId, CommitIdFromHexError, CommitInfo, DiffSummary, HeadState, ObjectFormat,

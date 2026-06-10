@@ -2,7 +2,7 @@
 
 use std::time::SystemTime;
 
-use anyhow::Result;
+use endringer_core::error::{anyhow_to_backend, Error as CrateError, NotFoundKind, Result};
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
@@ -27,7 +27,7 @@ impl GitBackend {
     ///
     /// Traverses parent directories until it finds a `.git` directory (or a
     /// bare repository), so callers may pass any subdirectory of the worktree.
-    pub fn open(path: &std::path::Path) -> Result<Self> {
+    pub fn open(path: &std::path::Path) -> anyhow::Result<Self> {
         let inner = gix::discover(path)?.into_sync();
         Ok(GitBackend { inner })
     }
@@ -42,123 +42,163 @@ macro_rules! repo {
     };
 }
 
+/// Converts an `anyhow::Result` to `endringer_core::Result` at the dispatch boundary.
+macro_rules! be {
+    ($e:expr) => {
+        $e.map_err(anyhow_to_backend)
+    };
+}
+
 impl VcsBackend for GitBackend {
     fn status_digest(&self) -> Result<StatusDigest> {
-        commit::status_digest(&repo!(self))
+        be!(commit::status_digest(&repo!(self)))
     }
 
     fn local_branches(&self) -> Result<Vec<BranchInfo>> {
-        branch::local_branches(&repo!(self))
+        be!(branch::local_branches(&repo!(self)))
     }
 
     fn remote_branches(&self) -> Result<Vec<BranchInfo>> {
-        branch::remote_branches(&repo!(self))
+        be!(branch::remote_branches(&repo!(self)))
     }
 
     fn list_commits(&self) -> Result<Vec<CommitInfo>> {
-        branch::list_commits(&repo!(self))
+        be!(branch::list_commits(&repo!(self)))
     }
 
     fn list_commits_sorted(&self, order: SortOrder) -> Result<Vec<CommitInfo>> {
-        branch::list_commits_sorted(&repo!(self), order)
+        be!(branch::list_commits_sorted(&repo!(self), order))
     }
 
     fn log_since(&self, since: SystemTime, until: SystemTime) -> Result<Vec<CommitInfo>> {
-        branch::log_since(&repo!(self), since, until)
+        be!(branch::log_since(&repo!(self), since, until))
     }
 
     fn find_commit(&self, id: &CommitId) -> Result<CommitInfo> {
-        branch::find_commit(&repo!(self), id)
+        branch::find_commit(&repo!(self), id).map_err(|e| {
+            let msg = e.to_string();
+            if msg.contains("not found") || msg.contains("commit '") && msg.contains("not found") {
+                CrateError::NotFound { kind: NotFoundKind::Commit, name: id.to_string() }
+            } else if msg.contains("not a commit") {
+                CrateError::NotACommit { id: id.clone() }
+            } else {
+                anyhow_to_backend(e)
+            }
+        })
     }
 
     fn list_tags(&self) -> Result<Vec<TagInfo>> {
-        tag::list_tags(&repo!(self))
+        be!(tag::list_tags(&repo!(self)))
     }
 
     fn list_tags_sorted(&self, order: SortOrder) -> Result<Vec<TagInfo>> {
-        tag::list_tags_sorted(&repo!(self), order)
+        be!(tag::list_tags_sorted(&repo!(self), order))
     }
 
     fn create_tag(&self, name: &str) -> Result<()> {
-        tag::create_tag(&repo!(self), name)
+        be!(tag::create_tag(&repo!(self), name))
     }
 
     fn create_annotated_tag(&self, name: &str, message: &str) -> Result<()> {
-        tag::create_annotated_tag(&repo!(self), name, message)
+        be!(tag::create_annotated_tag(&repo!(self), name, message))
     }
 
     fn delete_tag(&self, name: &str) -> Result<()> {
-        tag::delete_tag(&repo!(self), name)
+        be!(tag::delete_tag(&repo!(self), name))
     }
 
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> {
-        diff::diff(&repo!(self), from, to)
+        be!(diff::diff(&repo!(self), from, to))
     }
 
-    fn remote_url(&self, name: &str) -> Option<String> {
+    fn remote_url(&self, name: &str) -> Result<Option<String>> {
         let repo = repo!(self);
-        let remote = repo.find_remote(name).ok()?;
-        let url = remote.url(gix::remote::Direction::Fetch)?;
-        Some(url.to_bstring().to_string())
+        let remote = match repo.find_remote(name) {
+            Ok(r) => r,
+            Err(e) => {
+                let msg = e.to_string();
+                // gix reports "The remote named \"X\" did not exist" for
+                // unknown remotes — treat as absent, not an error.
+                if msg.contains("did not exist")
+                    || msg.contains("not found")
+                    || msg.contains("does not exist")
+                {
+                    return Ok(None);
+                }
+                return Err(anyhow_to_backend(anyhow::anyhow!(msg)));
+            }
+        };
+        let url = remote.url(gix::remote::Direction::Fetch);
+        Ok(url.map(|u| u.to_bstring().to_string()))
     }
 
     fn is_dirty(&self) -> Result<bool> {
-        status::is_dirty(&repo!(self))
+        be!(status::is_dirty(&repo!(self)))
     }
 
     fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>> {
-        graph::merge_base(&repo!(self), a, b)
+        be!(graph::merge_base(&repo!(self), a, b))
     }
 
     fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> {
-        graph::is_ancestor(&repo!(self), candidate, descendant)
+        be!(graph::is_ancestor(&repo!(self), candidate, descendant))
     }
 
     fn ahead_behind(&self, local: &CommitId, upstream: &CommitId) -> Result<AheadBehind> {
-        graph::ahead_behind(&repo!(self), local, upstream)
+        be!(graph::ahead_behind(&repo!(self), local, upstream))
     }
 
     fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
-        graph::branch_ahead_behind(&repo!(self), branch)
+        be!(graph::branch_ahead_behind(&repo!(self), branch))
     }
 
     fn repository_info(&self) -> Result<RepositoryInfo> {
-        info::repository_info(&repo!(self), endringer_core::types::BackendKind::Git)
+        be!(info::repository_info(&repo!(self), endringer_core::types::BackendKind::Git))
     }
 
     fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> {
-        branch::branch_tracking(&repo!(self), branch)
+        be!(branch::branch_tracking(&repo!(self), branch))
     }
 
     fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
-        branch::local_branch_tracking(&repo!(self))
+        be!(branch::local_branch_tracking(&repo!(self)))
     }
 
     fn is_merged_into(&self, b: &str, target: &str) -> Result<bool> {
-        branch::is_merged_into(&repo!(self), b, target)
+        be!(branch::is_merged_into(&repo!(self), b, target))
     }
 
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {
-        blame::blame(&repo!(self), path)
+        be!(blame::blame(&repo!(self), path))
     }
 
     fn worktree_status(&self) -> Result<WorktreeStatus> {
-        status::worktree_status(&repo!(self))
+        be!(status::worktree_status(&repo!(self)))
     }
 
     fn file_at_commit(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<u8>> {
-        object::file_at_commit(&repo!(self), path, commit_id)
+        object::file_at_commit(&repo!(self), path, commit_id).map_err(|e| {
+            let msg = e.to_string();
+            if msg.contains("not found") || msg.contains("does not exist") {
+                CrateError::PathNotFound {
+                    path: path.to_path_buf(),
+                    commit: Some(commit_id.clone()),
+                }
+            } else {
+                anyhow_to_backend(e)
+            }
+        })
     }
 
     fn submodules(&self) -> Result<Vec<SubmoduleInfo>> {
-        submodule::submodules(&repo!(self))
+        be!(submodule::submodules(&repo!(self)))
     }
 
     fn stash_entries(&self) -> Result<Vec<StashEntry>> {
-        stash::stash_entries(&repo!(self))
+        be!(stash::stash_entries(&repo!(self)))
     }
 
     fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
-        worktree::worktrees(&repo!(self))
+        be!(worktree::worktrees(&repo!(self)))
     }
 }

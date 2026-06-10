@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::time::SystemTime;
 
-use anyhow::Result;
+use endringer_core::error::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
@@ -25,7 +25,17 @@ use endringer_jj::JjBackend;
 /// println!("{}", digest.current_branch);
 /// ```
 pub fn repository(repo_path: &Path) -> Result<Repository> {
-    let backend = GitBackend::open(repo_path)?;
+    let backend = GitBackend::open(repo_path)
+        .map_err(|e| {
+            let msg = e.to_string();
+            if msg.contains("could not find repository") || msg.contains("Could not find")
+                || msg.contains("not a git repository") || msg.contains("no .git")
+            {
+                endringer_core::error::Error::NotARepository { path: repo_path.to_path_buf() }
+            } else {
+                endringer_core::error::anyhow_to_backend(e)
+            }
+        })?;
     Ok(Repository::with_backend(Box::new(backend), BackendKind::Git))
 }
 
@@ -42,7 +52,15 @@ pub fn repository(repo_path: &Path) -> Result<Repository> {
 /// println!("{}", digest.current_branch);
 /// ```
 pub fn jj_repository(repo_path: &Path) -> Result<Repository> {
-    let backend = JjBackend::open(repo_path)?;
+    let backend = JjBackend::open(repo_path)
+        .map_err(|e| {
+            let msg = e.to_string();
+            if msg.contains("not a jj repository") {
+                endringer_core::error::Error::NotARepository { path: repo_path.to_path_buf() }
+            } else {
+                endringer_core::error::anyhow_to_backend(e)
+            }
+        })?;
     Ok(Repository::with_backend(Box::new(backend), BackendKind::Jj))
 }
 
@@ -157,8 +175,11 @@ impl Repository {
 
     // ── Remotes ────────────────────────────────────────────────────────── //
 
-    /// Returns the fetch URL of the named remote, or `None` if not configured.
-    pub fn remote_url(&self, name: &str) -> Option<String> {
+    /// Returns the fetch URL of the named remote.
+    ///
+    /// Returns `Ok(None)` if no remote with that name is configured.
+    /// Returns `Err` only on an actual I/O or config parsing failure.
+    pub fn remote_url(&self, name: &str) -> Result<Option<String>> {
         self.backend.remote_url(name)
     }
 

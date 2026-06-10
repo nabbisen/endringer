@@ -20,3 +20,5 @@
 
 pub mod async_api;
 pub use async_api::AsyncRepository;
+
+pub use endringer::{Error, NotFoundKind, Result};

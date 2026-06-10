@@ -35,7 +35,7 @@ fn status_digest_fields() {
 #[test]
 fn remote_url_none_when_no_remote() {
     let f = Fixture::new();
-    assert!(repository(f.path()).unwrap().remote_url("origin").is_none());
+    assert!(repository(f.path()).unwrap().remote_url("origin").unwrap().is_none());
 }
 
 #[test]

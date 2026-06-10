@@ -90,5 +90,5 @@ fn it_works_commit_id_short() {
 #[test]
 fn it_works_remote_url() {
     // Use a remote name that cannot exist in any environment.
-    assert!(open().remote_url("__endringer_test_nonexistent__").is_none());
+    assert!(open().remote_url("__endringer_test_nonexistent__").unwrap().is_none());
 }

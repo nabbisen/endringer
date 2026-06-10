@@ -7,4 +7,7 @@
 //! [`VcsBackend`].
 
 pub mod backend;
+pub mod error;
 pub mod types;
+
+pub use error::{Error, NotFoundKind, Result};

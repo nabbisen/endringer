@@ -25,8 +25,7 @@
 
 use std::time::SystemTime;
 
-use anyhow::Result;
-
+use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
@@ -102,11 +101,13 @@ pub trait VcsBackend: Send + Sync {
     //
     // Returning empty is semantically valid when the backend has no such data.
 
-    /// Returns the fetch URL of the named remote, or `None` if not configured.
+    /// Returns the fetch URL of the named remote, or `Ok(None)` if not configured.
     ///
-    /// Default: `None`.
-    fn remote_url(&self, _name: &str) -> Option<String> {
-        None
+    /// Returns `Err` only on an actual I/O or config parsing failure.
+    ///
+    /// Default: `Ok(None)`.
+    fn remote_url(&self, _name: &str) -> Result<Option<String>> {
+        Ok(None)
     }
 
     /// Returns metadata for all submodules declared in `.gitmodules`.
@@ -138,8 +139,8 @@ pub trait VcsBackend: Send + Sync {
     /// Creates a lightweight tag at HEAD.
     ///
     /// Default: unsupported-feature error.
-    fn create_tag(&self, name: &str) -> Result<()> {
-        anyhow::bail!("backend does not support lightweight tag creation: {name:?}")
+    fn create_tag(&self, _name: &str) -> Result<()> {
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_tag" })
     }
 
     /// Creates an annotated tag at HEAD.
@@ -149,15 +150,15 @@ pub trait VcsBackend: Send + Sync {
     /// [`create_tag`][VcsBackend::create_tag] instead.
     ///
     /// Default: unsupported-feature error.
-    fn create_annotated_tag(&self, name: &str, _message: &str) -> Result<()> {
-        anyhow::bail!("backend does not support annotated tag creation: {name:?}")
+    fn create_annotated_tag(&self, _name: &str, _message: &str) -> Result<()> {
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_annotated_tag" })
     }
 
     /// Deletes the named tag.
     ///
     /// Default: unsupported-feature error.
-    fn delete_tag(&self, name: &str) -> Result<()> {
-        anyhow::bail!("backend does not support tag deletion: {name:?}")
+    fn delete_tag(&self, _name: &str) -> Result<()> {
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "delete_tag" })
     }
 
     // ── Optional-unsupported methods ───────────────────────────────────── //
@@ -167,8 +168,8 @@ pub trait VcsBackend: Send + Sync {
     /// Returns tracking metadata and divergence data for `branch`.
     ///
     /// Default: unsupported-feature error.
-    fn branch_tracking(&self, branch: &str) -> Result<BranchTrackingInfo> {
-        anyhow::bail!("backend does not support branch_tracking({branch:?})")
+    fn branch_tracking(&self, _branch: &str) -> Result<BranchTrackingInfo> {
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_tracking" })
     }
 
     /// Returns tracking metadata for all local branches, sorted ascending
@@ -176,7 +177,7 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
-        anyhow::bail!("backend does not support local_branch_tracking")
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "local_branch_tracking" })
     }
 
     /// Returns `true` if `branch` has been merged into `target`.
@@ -185,10 +186,11 @@ pub trait VcsBackend: Send + Sync {
     /// branches, preventing callers from accidentally reversing the arguments.
     ///
     /// Default: unsupported-feature error.
-    fn is_merged_into(&self, branch: &str, target: &str) -> Result<bool> {
-        anyhow::bail!(
-            "backend does not support is_merged_into({branch:?}, {target:?})"
-        )
+    fn is_merged_into(&self, _branch: &str, _target: &str) -> Result<bool> {
+        Err(crate::error::Error::UnsupportedBackendFeature {
+            backend: None,
+            feature: "is_merged_into",
+        })
     }
 
     /// Returns ahead/behind counts for the configured upstream of `branch`.
@@ -198,7 +200,7 @@ pub trait VcsBackend: Send + Sync {
     /// locally.
     ///
     /// Default: unsupported-feature error.
-    fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
-        anyhow::bail!("backend does not support branch_ahead_behind({branch:?})")
+    fn branch_ahead_behind(&self, _branch: &str) -> Result<Option<AheadBehind>> {
+        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_ahead_behind" })
     }
 }

@@ -6,7 +6,83 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.22.0] — 2026-06-10
+## [0.23.0] — 2026-06-10
+
+This release implements **RFC 006** (typed public error model). It adds 26
+new tests (172 total, 0 failures).
+
+### Breaking changes
+
+- All public sync and async methods now return `endringer::Result<T>`
+  (= `std::result::Result<T, endringer::Error>`) instead of `anyhow::Result<T>`.
+  Call sites using `?` are unchanged; function signatures that name `anyhow::Result`
+  must be updated to `endringer::Result`.
+- `Repository::remote_url(name)` now returns `Result<Option<String>>` instead
+  of `Option<String>`. `Ok(None)` = no such remote; `Err` = real I/O failure.
+- Custom backend implementors must update `impl VcsBackend` method signatures
+  from `anyhow::Result` to `endringer_core::error::Result`.
+
+See `docs/src/development/migration-v0.23-errors.md` for the full migration guide.
+
+### Added
+
+**`endringer_core::error` module**
+
+- `Error` enum: `#[non_exhaustive]`, `Debug`, `Display`, `std::error::Error`
+  (with `source()`), `From<std::io::Error>`. Not `Clone`/`PartialEq` (carries
+  `io::Error` and boxed source).
+- Variants: `NotARepository`, `EmptyRepository`, `NotFound { kind, name }`,
+  `InvalidCommitId`, `InvalidObjectId`, `InvalidRefName`, `NotACommit`,
+  `NotATree`, `PathNotFound`, `NonUtf8Path`, `BareRepositoryUnsupported`,
+  `UnsupportedBackendFeature { backend, feature }`, `UnsupportedObjectFormat`,
+  `HashCollision`, `CorruptRepository`, `Io`, `TaskJoin`, `Backend`.
+- `NotFoundKind` enum: `#[non_exhaustive]`, `Clone/Copy/Debug/PartialEq/Eq`,
+  `Display`. Variants: `Commit`, `Ref`, `Branch`, `Tag`, `Remote`, `Path`,
+  `Worktree`, `Submodule`.
+- `Result<T>` type alias = `std::result::Result<T, Error>`.
+- `anyhow_to_backend(err)` helper for backend crates transitioning from `anyhow`.
+- 9 unit tests in `endringer-core/src/error.rs`.
+
+**Re-exports**
+
+- `endringer::Error`, `endringer::NotFoundKind`, `endringer::Result`.
+- `endringer_async::Error`, `endringer_async::NotFoundKind`, `endringer_async::Result`.
+
+**Error classification**
+
+- `repository()` / `jj_repository()` constructors: gix "could not find
+  repository" → `NotARepository`; jj "not a jj repository" → `NotARepository`.
+- `find_commit()`: gix object-not-found → `NotFound { kind: Commit }`.
+- `file_at_commit()`: path absent → `PathNotFound`.
+- `GitBackend::remote_url()`: gix "did not exist" → `Ok(None)`.
+- `JjBackend::create_annotated_tag()`: → `UnsupportedBackendFeature { backend: Some(Jj), feature: "create_annotated_tag" }`.
+- All VcsBackend defaults now return `UnsupportedBackendFeature` instead of `anyhow::bail!`.
+- Unclassified gix errors → `Backend { message, source: None }` via `anyhow_to_backend`.
+
+**`endringer-git/src/backend.rs`**
+
+- Added `be!()` macro for converting `anyhow::Result` → `endringer_core::Result`
+  at the VcsBackend dispatch boundary. Internal modules remain `anyhow`-based.
+
+**`endringer-async`**
+
+- `spawn_blocking` `JoinError` → `Error::TaskJoin { message }`.
+- `async_tests.rs`: 2 new typed-error parity tests.
+
+**Tests and docs**
+
+- New `crates/endringer/tests/git_error_model.rs` (12 tests): not-a-repo,
+  missing commit, missing path, invalid commit hex, jj annotated-tag
+  unsupported, Display is human-readable, `Error: Send + Sync`,
+  `remote_url` returns `Ok(None)`.
+- `vcsbackend_defaults.rs` rewritten: 15 tests match variants, not strings.
+- New `docs/src/development/migration-v0.23-errors.md` migration guide.
+
+### Changed
+
+- RFC 006 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 005** (branch tracking and sync state) and
 **RFC 009** (repository information and capability discovery), with the

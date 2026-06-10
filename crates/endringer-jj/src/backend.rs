@@ -18,7 +18,8 @@
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use anyhow::{Result, bail};
+use anyhow::bail;
+use endringer_core::error::{Error as CrateError, Result};
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo, DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
 use endringer_git::GitBackend;
@@ -35,7 +36,7 @@ impl JjBackend {
     ///
     /// Verifies that `path` contains `.jj/`, locates the git store, and opens
     /// it with gix. The `jj` binary is not consulted.
-    pub fn open(path: &Path) -> Result<Self> {
+    pub fn open(path: &Path) -> anyhow::Result<Self> {
         let root = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
 
         let jj_dir = root.join(".jj");
@@ -93,16 +94,16 @@ impl VcsBackend for JjBackend {
     /// Always returns an error: Jujutsu does not support annotated tags.
     ///
     /// Use [`create_tag`][Self::create_tag] for a lightweight tag instead.
-    fn create_annotated_tag(&self, name: &str, _message: &str) -> Result<()> {
-        anyhow::bail!(
-            "jj does not support annotated tags; \
-             use create_tag(\"{name}\") for a lightweight tag instead"
-        )
+    fn create_annotated_tag(&self, _name: &str, _message: &str) -> Result<()> {
+        Err(CrateError::UnsupportedBackendFeature {
+            backend: Some(endringer_core::types::BackendKind::Jj),
+            feature: "create_annotated_tag",
+        })
     }
 
     fn delete_tag(&self, name: &str) -> Result<()> { self.git.delete_tag(name) }
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> { self.git.diff(from, to) }
-    fn remote_url(&self, name: &str) -> Option<String> { self.git.remote_url(name) }
+    fn remote_url(&self, name: &str) -> Result<Option<String>> { self.git.remote_url(name) }
     fn is_dirty(&self) -> Result<bool> { self.git.is_dirty() }
     fn merge_base(&self, a: &CommitId, b: &CommitId) -> Result<Option<CommitId>> { self.git.merge_base(a, b) }
     fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> { self.git.is_ancestor(candidate, descendant) }

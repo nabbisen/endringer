@@ -78,6 +78,7 @@ cargo publish -p endringer-async
 | [v0.20.0] | 2026-06-10 | Handoff/archive integrity (RFC 001), public contract consistency (RFC 002). |
 | [v0.21.0] | 2026-06-10 | `VcsBackend` defaults (RFC 003), `ObjectId` foundation (RFC 031), ahead/behind (RFC 004). |
 | [v0.22.0] | 2026-06-10 | Branch tracking (RFC 005), repository info/capabilities (RFC 009), explicit branch sort order. |
+| [v0.23.0] | 2026-06-10 | Typed public error model (RFC 006); `remote_url` promoted to `Result<Option<String>>`. |
 
 ---
 
@@ -301,3 +302,4 @@ Readiness criteria:
 [v0.20.0]: https://github.com/nabbisen/endringer/releases/tag/v0.20.0
 [v0.21.0]: https://github.com/nabbisen/endringer/releases/tag/v0.21.0
 [v0.22.0]: https://github.com/nabbisen/endringer/releases/tag/v0.22.0
+[v0.23.0]: https://github.com/nabbisen/endringer/releases/tag/v0.23.0

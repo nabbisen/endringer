@@ -1,6 +1,6 @@
 # RFC 006 — Typed public error model
 
-**Status.** Proposed  
+**Status.** Implemented (v0.23.0)  
 **Priority.** P1  
 **Target band.** v0.23.x  
 **Breaking change.** Yes  

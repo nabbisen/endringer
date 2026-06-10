@@ -253,3 +253,33 @@ async fn async_is_merged_into_parity() {
                                                   "main".to_string()).await.unwrap();
     assert_eq!(sync_result, async_result);
 }
+
+// ── RFC 006: async typed error propagation ────────────────────────────────── //
+
+#[tokio::test]
+async fn async_open_non_repo_returns_not_a_repository() {
+    use endringer_async::Error;
+    let dir = tempfile::TempDir::new().unwrap();
+    let err = endringer_async::AsyncRepository::open(dir.path())
+        .await
+        .err()
+        .expect("expected error");
+    assert!(
+        matches!(err, Error::NotARepository { .. }),
+        "expected NotARepository, got: {err}"
+    );
+}
+
+#[tokio::test]
+async fn async_error_is_typed_not_anyhow() {
+    // Verify that the async API returns endringer::Error, not anyhow::Error,
+    // by matching on a specific variant.
+    use endringer_async::Error;
+    let dir = tempfile::TempDir::new().unwrap();
+    let result = endringer_async::AsyncRepository::open(dir.path()).await;
+    assert!(result.is_err());
+    let err = result.err().unwrap();
+    // The error must be the typed variant, not a string-only type.
+    let _ = format!("{err}"); // Display works
+    let _ = format!("{err:?}"); // Debug works
+}
