@@ -7,8 +7,9 @@ use endringer_core::error::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
-    CommitInfo, DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest,
-    SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    CommitInfo, ConflictSummary, DiffSummary, OperationState, RepositoryInfo,
+    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo,
+    WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -265,6 +266,33 @@ impl Repository {
     /// prevent accidental argument reversal.
     pub fn is_merged_into(&self, branch: &str, target: &str) -> Result<bool> {
         self.backend.is_merged_into(branch, target)
+    }
+
+    // ── Operation and conflict state ───────────────────────────────────── //
+
+    /// Returns the current in-progress repository operation, if any.
+    ///
+    /// Reads Git marker files: `rebase-merge/`, `rebase-apply/`,
+    /// `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG`.
+    /// Returns `Ok(OperationState::None)` when no operation is in progress.
+    pub fn operation_state(&self) -> Result<OperationState> {
+        self.backend.operation_state()
+    }
+
+    /// Returns paths with unmerged (higher-stage) index entries, sorted
+    /// ascending.
+    ///
+    /// Returns an empty `Vec` when there are no conflicts.
+    pub fn unmerged_paths(&self) -> Result<Vec<std::path::PathBuf>> {
+        self.backend.unmerged_paths()
+    }
+
+    /// Returns a structured summary of all conflicted index entries.
+    ///
+    /// Includes per-stage object IDs for each conflicted path.
+    /// For a lighter-weight check use [`unmerged_paths`][Self::unmerged_paths].
+    pub fn conflict_summary(&self) -> Result<ConflictSummary> {
+        self.backend.conflict_summary()
     }
 
     // ── Blame ──────────────────────────────────────────────────────────── //

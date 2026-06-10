@@ -283,3 +283,27 @@ async fn async_error_is_typed_not_anyhow() {
     let _ = format!("{err}"); // Display works
     let _ = format!("{err:?}"); // Debug works
 }
+
+// ── RFC 008: async operation state and conflict parity ────────────────────── //
+
+#[tokio::test]
+async fn async_operation_state_clean_is_none() {
+    use endringer::OperationState;
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    assert_eq!(repo.operation_state().await.unwrap(), OperationState::None);
+}
+
+#[tokio::test]
+async fn async_unmerged_paths_clean_is_empty() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    assert!(repo.unmerged_paths().await.unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn async_conflict_summary_clean_is_empty() {
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    assert!(repo.conflict_summary().await.unwrap().is_empty());
+}

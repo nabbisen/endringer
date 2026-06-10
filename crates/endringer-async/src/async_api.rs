@@ -9,8 +9,8 @@ use endringer::Result;
 use endringer::repository::{Repository, jj_repository, repository};
 use endringer::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
-    TagInfo, WorktreeInfo, WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
 /// Maps a tokio `JoinError` to `endringer::Error::TaskJoin`.
@@ -227,5 +227,22 @@ impl AsyncRepository {
     pub async fn is_merged_into(&self, branch: String, target: String) -> Result<bool> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.is_merged_into(&branch, &target)).await.map_err(join_err)?
+    }
+
+    // ── Operation and conflict state ───────────────────────────────────── //
+
+    pub async fn operation_state(&self) -> Result<OperationState> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.operation_state()).await.map_err(join_err)?
+    }
+
+    pub async fn unmerged_paths(&self) -> Result<Vec<std::path::PathBuf>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.unmerged_paths()).await.map_err(join_err)?
+    }
+
+    pub async fn conflict_summary(&self) -> Result<ConflictSummary> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.conflict_summary()).await.map_err(join_err)?
     }
 }

@@ -1,6 +1,6 @@
 # RFC 008 — Read-side operation and conflict state
 
-**Status.** Proposed  
+**Status.** Implemented (v0.25.0)  
 **Priority.** P2  
 **Target band.** v0.25.x  
 **Breaking change.** Adds API; trait impact should be eased by RFC 003  

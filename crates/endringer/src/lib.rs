@@ -34,10 +34,11 @@ pub use endringer_core::error::{Error, NotFoundKind, Result};
 
 pub use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, ChangeKind,
-    CommitId, CommitIdFromHexError, CommitInfo, DiffSummary, HeadState, ObjectFormat,
-    ObjectId, ObjectIdFromHexError, RepositoryCapabilities, RepositoryInfo, SortOrder,
-    StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation, TagInfo,
-    WorktreeInfo, WorktreeStatus,
+    CommitId, CommitIdFromHexError, CommitInfo, ConflictPath, ConflictStage,
+    ConflictSummary, DiffSummary, HeadState, ObjectFormat, ObjectId,
+    ObjectIdFromHexError, OperationState, RebaseKind, RepositoryCapabilities,
+    RepositoryInfo, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo,
+    TagAnnotation, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
 /// The [`VcsBackend`] trait, re-exported for implementing custom backends.

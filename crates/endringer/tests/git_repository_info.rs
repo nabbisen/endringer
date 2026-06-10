@@ -30,7 +30,8 @@ fn repository_info_normal_git() {
     assert!(info.capabilities.tag_create_annotated);
     assert!(info.capabilities.tag_delete);
     assert!(info.capabilities.branch_tracking);
-    assert!(!info.capabilities.operation_state); // RFC 008 not yet
+    assert!(info.capabilities.operation_state);  // RFC 008 implemented
+    assert!(info.capabilities.conflict_state);   // RFC 008 implemented
     assert!(!info.capabilities.jj_native_state);
 }
 

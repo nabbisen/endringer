@@ -6,7 +6,53 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.24.0] — 2026-06-10
+## [0.25.0] — 2026-06-10
+
+This release implements **RFC 008** (read-side operation and conflict state).
+It adds 13 new tests (195 total, 0 failures). No breaking changes.
+
+### Added
+
+**RFC 008 — Read-side operation and conflict state**
+
+New public types, re-exported from `endringer`:
+
+- `OperationState` enum: `None | Merge { heads } | Rebase { kind } | CherryPick { head } | Revert { head } | Bisect`.
+- `RebaseKind` enum: `Merge | Apply | Unknown`.
+- `ConflictStage` struct: `stage: u8` (1 = base, 2 = ours, 3 = theirs), `object_id: ObjectId`.
+- `ConflictPath` struct: `path: PathBuf`, `stages: Vec<ConflictStage>`.
+- `ConflictSummary` struct: `paths: Vec<ConflictPath>`, `is_empty()`, `len()`.
+
+New Repository methods (sync and async):
+
+- `operation_state() -> Result<OperationState>` — reads Git marker files in detection order: `rebase-merge/` → `rebase-apply/` → `MERGE_HEAD` → `CHERRY_PICK_HEAD` → `REVERT_HEAD` → `BISECT_LOG` / `refs/bisect/` → `None`.
+- `unmerged_paths() -> Result<Vec<PathBuf>>` — sorted deduplicated paths with higher-stage index entries. Empty when no conflicts.
+- `conflict_summary() -> Result<ConflictSummary>` — per-stage object IDs for every conflicted path. Uses `ObjectId` from RFC 031.
+
+New `VcsBackend` trait methods (all have `UnsupportedBackendFeature` defaults per RFC 003; `GitBackend` overrides all three; `JjBackend` uses the unsupported defaults since jj conflicts are not index-stage conflicts):
+
+- `fn operation_state(&self) -> Result<OperationState>`
+- `fn unmerged_paths(&self) -> Result<Vec<PathBuf>>`
+- `fn conflict_summary(&self) -> Result<ConflictSummary>`
+
+Implementation modules:
+
+- `endringer-git/src/operation.rs` — Git marker-file detection.
+- `endringer-git/src/conflict.rs` — index stage reading via `gix::index`.
+
+`RepositoryCapabilities` updated: `operation_state: true`, `conflict_state: true` for `GitBackend`.
+
+Tests:
+
+- `crates/endringer/tests/git_operation_state.rs` (10 tests): clean repo, merge conflict, cherry-pick conflict, revert conflict, rebase (merge backend), paths sorted, conflict summary stages, async parity.
+- `crates/endringer-async/tests/async_tests.rs` (3 new): async `operation_state`, `unmerged_paths`, `conflict_summary` on clean repo.
+
+### Changed
+
+- `git_repository_info.rs`: updated capability assertions to reflect `operation_state: true` and `conflict_state: true` for the Git backend (RFC 008 now implemented).
+- RFC 008 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 007** (jj real-repository verification and CI
 fixture). It adds 10 new tests (182 total, 0 failures). No public API changes.

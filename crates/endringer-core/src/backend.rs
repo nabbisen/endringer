@@ -28,8 +28,8 @@ use std::time::SystemTime;
 use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
-    TagInfo, WorktreeInfo, WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
 /// Common interface implemented by every VCS backend.
@@ -202,5 +202,38 @@ pub trait VcsBackend: Send + Sync {
     /// Default: unsupported-feature error.
     fn branch_ahead_behind(&self, _branch: &str) -> Result<Option<AheadBehind>> {
         return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_ahead_behind" })
+    }
+
+    // ── Operation and conflict state (RFC 008) ─────────────────────────── //
+
+    /// Returns the current in-progress repository operation, if any.
+    ///
+    /// Reads Git marker files (`MERGE_HEAD`, `rebase-merge/`, `rebase-apply/`,
+    /// `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG`, `refs/bisect/`).
+    ///
+    /// Returns `Ok(OperationState::None)` when no operation is in progress.
+    ///
+    /// Default: unsupported-feature error.
+    fn operation_state(&self) -> Result<OperationState> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "operation_state" })
+    }
+
+    /// Returns paths with unmerged (higher-stage) index entries.
+    ///
+    /// Returns a sorted, deduplicated list. Empty when no conflicts exist.
+    ///
+    /// Default: unsupported-feature error.
+    fn unmerged_paths(&self) -> Result<Vec<std::path::PathBuf>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "unmerged_paths" })
+    }
+
+    /// Returns a structured summary of all conflicted index entries.
+    ///
+    /// Includes per-stage object IDs. For a lighter-weight check,
+    /// prefer [`unmerged_paths`][Self::unmerged_paths].
+    ///
+    /// Default: unsupported-feature error.
+    fn conflict_summary(&self) -> Result<ConflictSummary> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "conflict_summary" })
     }
 }

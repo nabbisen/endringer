@@ -14,8 +14,6 @@ Open for review and discussion. Implementation may not yet have begun.
 
 | ID | Title | Priority | Target band |
 |----|-------|----------|-------------|
-
-| [008](./proposed/008-read-side-operation-conflict-state.md) | Read-side operation and conflict state | P2 | v0.25.x |
 | [010](./proposed/010-point-in-time-reads-tree-snapshots.md) | Point-in-time reads and tree snapshots | P2 | v0.26.x |
 | [011](./proposed/011-remote-reference-inventory.md) | Remote and reference inventory | P3 | v0.27.x+ |
 | [012](./proposed/012-bounded-history-queries.md) | Bounded history queries | P3 | v0.27.x+ |
@@ -55,6 +53,7 @@ RFCs whose work has shipped. Moved here from `proposed/`.
 | [009](./done/009-repository-info-capabilities.md) | Repository information and capability discovery | v0.22.0 |
 | [006](./done/006-typed-public-error-model.md) | Typed public error model | v0.23.0 |
 | [007](./done/007-jj-real-repository-verification.md) | jj real-repository verification | v0.24.0 |
+| [008](./done/008-read-side-operation-conflict-state.md) | Read-side operation and conflict state | v0.25.0 |
 
 ---
 

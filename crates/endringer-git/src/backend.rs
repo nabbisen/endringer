@@ -6,11 +6,12 @@ use endringer_core::error::{anyhow_to_backend, Error as CrateError, NotFoundKind
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo,
-    TagInfo, WorktreeInfo, WorktreeStatus,
+    ConflictSummary, DiffSummary, OperationState, RepositoryInfo, SortOrder,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 
-use crate::{blame, branch, commit, diff, graph, info, object, stash, status, submodule, tag, worktree};
+use crate::{blame, branch, commit, conflict, diff, graph, info, object, operation,
+            stash, status, submodule, tag, worktree};
 
 /// Git backend.
 ///
@@ -200,5 +201,17 @@ impl VcsBackend for GitBackend {
 
     fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
         be!(worktree::worktrees(&repo!(self)))
+    }
+
+    fn operation_state(&self) -> Result<OperationState> {
+        be!(operation::operation_state(repo!(self).git_dir()))
+    }
+
+    fn unmerged_paths(&self) -> Result<Vec<std::path::PathBuf>> {
+        be!(conflict::unmerged_paths(&repo!(self)))
+    }
+
+    fn conflict_summary(&self) -> Result<ConflictSummary> {
+        be!(conflict::conflict_summary(&repo!(self)))
     }
 }

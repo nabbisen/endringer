@@ -37,6 +37,84 @@ pub struct AheadBehind {
     pub merge_base: Option<CommitId>,
 }
 
+// ── Operation and conflict state (RFC 008) ────────────────────────────────── //
+
+/// The kind of rebase in progress.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RebaseKind {
+    /// Rebase using the merge backend (`rebase-merge/` present).
+    Merge,
+    /// Rebase using the apply/am backend (`rebase-apply/` present).
+    Apply,
+    /// A rebase directory exists but the kind cannot be determined.
+    Unknown,
+}
+
+/// The in-progress repository operation, if any.
+///
+/// Returned by [`crate::backend::VcsBackend::operation_state`].
+///
+/// Detected by reading Git marker files under the `.git/` directory:
+///
+/// | State | Marker |
+/// |---|---|
+/// | `Rebase { kind: Merge }` | `rebase-merge/` |
+/// | `Rebase { kind: Apply }` | `rebase-apply/` |
+/// | `Merge` | `MERGE_HEAD` |
+/// | `CherryPick` | `CHERRY_PICK_HEAD` |
+/// | `Revert` | `REVERT_HEAD` |
+/// | `Bisect` | `BISECT_LOG` or `refs/bisect/` |
+/// | `None` | none of the above |
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum OperationState {
+    /// No in-progress operation.
+    None,
+    /// A merge is in progress. `heads` holds the OIDs from `MERGE_HEAD`.
+    Merge { heads: Vec<CommitId> },
+    /// A rebase is in progress.
+    Rebase { kind: RebaseKind },
+    /// A cherry-pick is in progress. `head` is the OID from `CHERRY_PICK_HEAD`.
+    CherryPick { head: Option<CommitId> },
+    /// A revert is in progress. `head` is the OID from `REVERT_HEAD`.
+    Revert { head: Option<CommitId> },
+    /// A bisect is in progress.
+    Bisect,
+}
+
+/// One stage slot of a conflicted path (base = 1, ours = 2, theirs = 3).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictStage {
+    /// Stage number (1 = base, 2 = ours, 3 = theirs).
+    pub stage: u8,
+    /// Object ID of the blob in this stage.
+    pub object_id: ObjectId,
+}
+
+/// A path with one or more conflict stages in the index.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictPath {
+    /// Path relative to the repository root.
+    pub path: std::path::PathBuf,
+    /// The present stage slots (subset of base/ours/theirs).
+    pub stages: Vec<ConflictStage>,
+}
+
+/// A summary of all conflicted paths in the index.
+///
+/// Returned by [`crate::backend::VcsBackend::conflict_summary`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictSummary {
+    /// All paths with higher-stage index entries, sorted ascending.
+    pub paths: Vec<ConflictPath>,
+}
+
+impl ConflictSummary {
+    /// Returns `true` if there are no conflicted paths.
+    pub fn is_empty(&self) -> bool { self.paths.is_empty() }
+    /// Returns the number of conflicted paths.
+    pub fn len(&self) -> usize { self.paths.len() }
+}
+
 // ── BranchInfo ────────────────────────────────────────────────────────────── //
 
 /// Tracking and divergence metadata for a local branch.

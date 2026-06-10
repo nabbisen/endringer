@@ -181,7 +181,7 @@ dependencies = [
 
 [[package]]
 name = "endringer"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
  "endringer-core",
@@ -192,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-async"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
  "endringer",
@@ -202,14 +202,14 @@ dependencies = [
 
 [[package]]
 name = "endringer-core"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
 ]
 
 [[package]]
 name = "endringer-git"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
  "endringer-core",
@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-jj"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "anyhow",
  "endringer-core",

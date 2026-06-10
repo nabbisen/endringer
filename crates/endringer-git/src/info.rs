@@ -91,13 +91,13 @@ fn read_head_state(repo: &Repository) -> Result<HeadState> {
 fn capabilities_for(backend: BackendKind, is_bare: bool) -> RepositoryCapabilities {
     match backend {
         BackendKind::Git => RepositoryCapabilities {
-            working_tree:         !is_bare,
+            working_tree:           !is_bare,
             tag_create_lightweight: true,
             tag_create_annotated:   true,
             tag_delete:             true,
             branch_tracking:        true,
-            operation_state:        false, // RFC 008 not yet implemented
-            conflict_state:         false,
+            operation_state:        true,  // RFC 008 implemented
+            conflict_state:         true,  // RFC 008 implemented
             jj_native_state:        false,
         },
         BackendKind::Jj => RepositoryCapabilities {
