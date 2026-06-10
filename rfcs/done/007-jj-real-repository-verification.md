@@ -1,6 +1,6 @@
 # RFC 007 — jj real-repository verification
 
-**Status.** Proposed  
+**Status.** Implemented (v0.24.0)  
 **Priority.** P1  
 **Target band.** v0.24.x  
 **Breaking change.** No  

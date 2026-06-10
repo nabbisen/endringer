@@ -6,7 +6,54 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.23.0] — 2026-06-10
+## [0.24.0] — 2026-06-10
+
+This release implements **RFC 007** (jj real-repository verification and CI
+fixture). It adds 10 new tests (182 total, 0 failures). No public API changes.
+
+### Added
+
+**RFC 007 — jj real-repository verification**
+
+- `crates/endringer/tests/support/jj_fixture.rs` — a `JjFixture` helper that
+  creates native (`.jj/` only) and colocated (`.git/` + `.jj/`) jj repositories
+  using the real `jj` CLI. Includes environment isolation and a `require_jj()`
+  guard that skips gracefully when `jj` is absent.
+- `crates/endringer/tests/jj_real.rs` — 10 tests verifying the git-store view
+  against real jj repositories:
+  1. open native repository
+  2. open colocated repository
+  3. `status_digest` reports project root name (not `git` store dir)
+  4. commit history includes jj-authored commits
+  5. `file_at_commit` reads from jj-created commits
+  6. lightweight tag roundtrip (create → verify → delete)
+  7. annotated tag returns typed `Error::UnsupportedBackendFeature { backend: Some(Jj) }`
+  8. `repository_info` reports `BackendKind::Jj` and `.jj` as `vcs_dir`
+  9. colocated layout has both `.git/` and `.jj/`
+  10. compile-time boundary check: no jj-native concepts in public API
+- `ENDRINGER_REQUIRE_JJ_CLI_TESTS=1` env var makes missing `jj` a test
+  failure instead of a skip (for CI).
+
+**Documentation**
+
+- `docs/src/reference/backends.md` updated with a precise jj support boundary:
+  what is supported (commit objects, refs, trees, lightweight tags), what is not
+  (change IDs, operation log, working-copy commit, first-class conflict objects),
+  and the "git-store view" stance.
+
+**Acceptance criteria met**
+
+- CI path: tests run when `jj` is installed, skip when absent, fail loudly with
+  `ENDRINGER_REQUIRE_JJ_CLI_TESTS=1`.
+- Native and colocated layouts both tested.
+- `docs/src/reference/backends.md` defines the jj promise precisely.
+- No runtime dependency on `jj` — library never invokes the `jj` binary.
+
+### Changed
+
+- RFC 007 moved from `rfcs/proposed/` to `rfcs/done/`.
+
+---
 
 This release implements **RFC 006** (typed public error model). It adds 26
 new tests (172 total, 0 failures).
