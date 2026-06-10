@@ -14,10 +14,8 @@ Open for review and discussion. Implementation may not yet have begun.
 
 | ID | Title | Priority | Target band |
 |----|-------|----------|-------------|
-| [001](./proposed/001-handoff-archive-release-integrity.md) | Handoff, archive, and release-manifest integrity | P0 | v0.20.x |
-| [002](./proposed/002-public-contract-consistency.md) | Public contract consistency and documentation tests | P0 | v0.20.x |
-| [003](./proposed/003-vcsbackend-default-impls-extension-stance.md) | `VcsBackend` default implementations and extension stance | P0 | v0.21.x |
-| [004](./proposed/004-ahead-behind-graph-computation.md) | Ahead/behind graph computation | P1 | v0.21.x |
+| [001](./done/001-handoff-archive-release-integrity.md) | Handoff, archive, and release-manifest integrity | P0 | v0.20.x |
+| [002](./done/002-public-contract-consistency.md) | Public contract consistency and documentation tests | P0 | v0.20.x |
 | [005](./proposed/005-branch-tracking-sync-state.md) | Branch tracking and sync state | P1 | v0.22.x |
 | [006](./proposed/006-typed-public-error-model.md) | Typed public error model | P1 | v0.23.x |
 | [007](./proposed/007-jj-real-repository-verification.md) | jj real-repository verification | P1 | v0.24.x |
@@ -44,7 +42,6 @@ Open for review and discussion. Implementation may not yet have begun.
 | [028](./proposed/028-rename-copy-detection.md) | Rename and copy detection | P3 | v0.30.x+ |
 | [029](./proposed/029-documentation-cookbook-examples.md) | Documentation cookbook and consumer examples | P2 | v0.28.x |
 | [030](./proposed/030-release-quality-gates.md) | Release quality gates and stabilization dashboard | P1 | v0.28.x+ |
-| [031](./proposed/031-object-identity-foundation.md) | Object identity foundation (`ObjectId`) | P1 | v0.21.x |
 
 ---
 
@@ -52,7 +49,13 @@ Open for review and discussion. Implementation may not yet have begun.
 
 RFCs whose work has shipped. Moved here from `proposed/`.
 
-*(none yet)*
+| ID | Title | Shipped in |
+|----|-------|------------|
+| [001](./done/001-handoff-archive-release-integrity.md) | Handoff, archive, and release-manifest integrity | v0.20.0 |
+| [002](./done/002-public-contract-consistency.md) | Public contract consistency and documentation tests | v0.20.0 |
+| [003](./done/003-vcsbackend-default-impls-extension-stance.md) | `VcsBackend` default implementations and extension stance | v0.21.0 |
+| [031](./done/031-object-identity-foundation.md) | Object identity foundation (`ObjectId`) | v0.21.0 |
+| [004](./done/004-ahead-behind-graph-computation.md) | Ahead/behind graph computation | v0.21.0 |
 
 ---
 

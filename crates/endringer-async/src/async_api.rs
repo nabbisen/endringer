@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer::repository::{Repository, jj_repository, repository};
-use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
+use endringer::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus, AheadBehind};
 
 /// Async wrapper around [`Repository`].
 ///
@@ -171,5 +171,24 @@ impl AsyncRepository {
     pub async fn worktrees(&self) -> Result<Vec<WorktreeInfo>> {
         let r = Arc::clone(&self.inner);
         tokio::task::spawn_blocking(move || r.worktrees()).await?
+    }
+
+    // ── Ahead / behind ─────────────────────────────────────────────────── //
+
+    pub async fn ahead_behind(
+        &self,
+        local: CommitId,
+        upstream: CommitId,
+    ) -> Result<AheadBehind> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.ahead_behind(&local, &upstream)).await?
+    }
+
+    pub async fn branch_ahead_behind(
+        &self,
+        branch: String,
+    ) -> Result<Option<AheadBehind>> {
+        let r = Arc::clone(&self.inner);
+        tokio::task::spawn_blocking(move || r.branch_ahead_behind(&branch)).await?
     }
 }

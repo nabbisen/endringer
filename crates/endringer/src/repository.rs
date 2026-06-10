@@ -6,8 +6,8 @@ use std::time::SystemTime;
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
-    BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
-    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+    AheadBehind, BackendKind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary,
+    SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -184,6 +184,31 @@ impl Repository {
     /// of `descendant`. A commit is its own ancestor.
     pub fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> {
         self.backend.is_ancestor(candidate, descendant)
+    }
+
+    // ── Ahead / behind ─────────────────────────────────────────────────── //
+
+    /// Returns ahead/behind counts between `local` and `upstream` commit tips.
+    ///
+    /// Uses a single symmetric-difference traversal equivalent to
+    /// `git rev-list --left-right --count local...upstream`.
+    /// Cost is O(commits strictly between the merge base and the two tips).
+    ///
+    /// See [`AheadBehind`] for the edge-case contract.
+    pub fn ahead_behind(
+        &self,
+        local: &CommitId,
+        upstream: &CommitId,
+    ) -> Result<AheadBehind> {
+        self.backend.ahead_behind(local, upstream)
+    }
+
+    /// Returns ahead/behind counts for the configured upstream of `branch`.
+    ///
+    /// Returns `Ok(None)` when the branch has no configured upstream.
+    /// Returns `Err` when the configured upstream ref no longer exists locally.
+    pub fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
+        self.backend.branch_ahead_behind(branch)
     }
 
     // ── Blame ──────────────────────────────────────────────────────────── //

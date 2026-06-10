@@ -1,6 +1,6 @@
 # RFC 004 — Ahead/behind graph computation
 
-**Status.** Proposed  
+**Status.** Implemented (v0.21.0)  
 **Priority.** P1  
 **Target band.** v0.21.x  
 **Breaking change.** Adds API; trait impact should be eased by RFC 003  

@@ -130,3 +130,80 @@ async fn async_is_dirty_modified_file() {
     std::fs::write(f.path().join("file.txt"), "changed\n").unwrap();
     assert!(repo.is_dirty().await.unwrap());
 }
+
+// ── RFC 004: async ahead/behind parity ───────────────────────────────────── //
+
+#[tokio::test]
+async fn async_ahead_behind_identical() {
+    let f = Fixture::new();
+    let repo = AsyncRepository::open(f.path()).await.unwrap();
+
+    let head_hex = std::process::Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM", "1").env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .output().unwrap();
+    let hex = String::from_utf8(head_hex.stdout).unwrap().trim().to_string();
+    let id = endringer::CommitId::from_hex(&hex).unwrap();
+
+    let ab = repo.ahead_behind(id.clone(), id).await.unwrap();
+    assert_eq!(ab.ahead,  0);
+    assert_eq!(ab.behind, 0);
+}
+
+#[tokio::test]
+async fn async_ahead_behind_matches_sync() {
+    use endringer_async::AsyncRepository;
+    use endringer::repository::repository;
+
+    let f = Fixture::new();
+
+    // Add a second commit so we have something to compare.
+    std::fs::write(f.path().join("b.txt"), "b\n").unwrap();
+    {
+        let git = |args: &[&str]| {
+            std::process::Command::new("git").args(args)
+                .current_dir(f.path())
+                .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+                .env("GIT_EDITOR","true").env("GIT_TERMINAL_PROMPT","0")
+                .stdin(std::process::Stdio::null())
+                .status().unwrap();
+        };
+        git(&["add","."]);
+        git(&["commit","-m","second commit"]);
+    }
+
+    let head_hex = std::process::Command::new("git")
+        .args(["rev-parse","HEAD"]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .output().unwrap();
+    let upstream_hex = std::process::Command::new("git")
+        .args(["rev-parse","HEAD^"]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .output().unwrap();
+
+    let head = endringer::CommitId::from_hex(
+        String::from_utf8(head_hex.stdout).unwrap().trim()).unwrap();
+    let base = endringer::CommitId::from_hex(
+        String::from_utf8(upstream_hex.stdout).unwrap().trim()).unwrap();
+
+    // Sync result.
+    let sync_repo = repository(f.path()).unwrap();
+    let sync_ab = sync_repo.ahead_behind(&head, &base).unwrap();
+
+    // Async result.
+    let async_repo = AsyncRepository::open(f.path()).await.unwrap();
+    let async_ab = async_repo.ahead_behind(head, base).await.unwrap();
+
+    assert_eq!(sync_ab.ahead,  async_ab.ahead,  "sync/async ahead mismatch");
+    assert_eq!(sync_ab.behind, async_ab.behind, "sync/async behind mismatch");
+}
+
+#[tokio::test]
+async fn async_branch_ahead_behind_no_upstream() {
+    let f = Fixture::new();
+    let repo = AsyncRepository::open(f.path()).await.unwrap();
+    // No upstream configured on main in this fixture.
+    let result = repo.branch_ahead_behind("main".to_string()).await.unwrap();
+    assert_eq!(result, None);
+}

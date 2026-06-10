@@ -76,6 +76,7 @@ cargo publish -p endringer-async
 | [v0.19.0] | 2026-05-04 | Bug fixes, README restructure, full docs/ site, codebase audit in ROADMAP. |
 | [v0.19.2] | 2026-05-04 | `gix` bump to 0.83, minor bug fixes. |
 | [v0.20.0] | 2026-06-10 | Handoff/archive integrity (RFC 001), public contract consistency (RFC 002). |
+| [v0.21.0] | 2026-06-10 | `VcsBackend` defaults (RFC 003), `ObjectId` foundation (RFC 031), ahead/behind (RFC 004). |
 
 ---
 
@@ -297,3 +298,4 @@ Readiness criteria:
 [v0.19.0]: https://github.com/nabbisen/endringer/releases/tag/v0.19.0
 [v0.19.2]: https://github.com/nabbisen/endringer/releases/tag/v0.19.2
 [v0.20.0]: https://github.com/nabbisen/endringer/releases/tag/v0.20.0
+[v0.21.0]: https://github.com/nabbisen/endringer/releases/tag/v0.21.0

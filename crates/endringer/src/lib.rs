@@ -31,8 +31,9 @@
 //! async facade.
 
 pub use endringer_core::types::{
-    BackendKind, BlameEntry, BranchInfo, ChangeKind, CommitId, CommitIdFromHexError, CommitInfo,
-    DiffSummary, SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation,
+    AheadBehind, BackendKind, BlameEntry, BranchInfo, ChangeKind, CommitId,
+    CommitIdFromHexError, CommitInfo, DiffSummary, ObjectId, ObjectIdFromHexError,
+    SortOrder, StashEntry, StatusDigest, StatusEntry, SubmoduleInfo, TagAnnotation,
     TagInfo, WorktreeInfo, WorktreeStatus,
 };
 

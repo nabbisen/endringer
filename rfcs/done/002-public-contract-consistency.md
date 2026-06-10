@@ -1,6 +1,6 @@
 # RFC 002 — Public contract consistency and documentation tests
 
-**Status.** Proposed  
+**Status.** Implemented (v0.20.0)  
 **Priority.** P0  
 **Target band.** v0.20.x  
 **Breaking change.** No  

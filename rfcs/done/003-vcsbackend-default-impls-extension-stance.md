@@ -1,6 +1,6 @@
 # RFC 003 — `VcsBackend` default implementations and extension stance
 
-**Status.** Proposed  
+**Status.** Implemented (v0.21.0)  
 **Priority.** P0  
 **Target band.** v0.21.x  
 **Breaking change.** Possibly minor for custom backend authors if method semantics are tightened  

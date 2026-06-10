@@ -4,7 +4,10 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
+use endringer_core::types::{
+    AheadBehind, BlameEntry, BranchInfo, CommitId, CommitInfo, DiffSummary, SortOrder,
+    StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus,
+};
 
 use crate::{blame, branch, commit, diff, graph, object, stash, status, submodule, tag, worktree};
 
@@ -108,6 +111,14 @@ impl VcsBackend for GitBackend {
 
     fn is_ancestor(&self, candidate: &CommitId, descendant: &CommitId) -> Result<bool> {
         graph::is_ancestor(&repo!(self), candidate, descendant)
+    }
+
+    fn ahead_behind(&self, local: &CommitId, upstream: &CommitId) -> Result<AheadBehind> {
+        graph::ahead_behind(&repo!(self), local, upstream)
+    }
+
+    fn branch_ahead_behind(&self, branch: &str) -> Result<Option<AheadBehind>> {
+        graph::branch_ahead_behind(&repo!(self), branch)
     }
 
     fn blame(&self, path: &std::path::Path) -> Result<Vec<BlameEntry>> {

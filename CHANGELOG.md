@@ -7,7 +7,205 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.20.0] — 2026-06-10
+## [0.21.0] — 2026-06-10
+
+This release implements **RFC 003** (`VcsBackend` default implementations and
+extension stance), **RFC 031** (`ObjectId` foundation type), and **RFC 004**
+(ahead/behind graph computation). It is the v0.21.x foundation pass.
+
+**All 125 tests pass** (up from 88 in v0.20.0; 37 new tests across three
+integration test files and one new unit test module).
+
+### Added
+
+**`VcsBackend` default implementations (RFC 003)**
+
+- Optional-empty defaults: `remote_url` → `None`; `submodules`,
+  `stash_entries`, `worktrees` → `Ok(vec![])`. Custom backends no longer
+  need to implement these unless they have real data to return.
+- Write-side exception defaults: `create_tag`, `create_annotated_tag`,
+  `delete_tag` now default to an unsupported-feature error rather than
+  being required. Git and jj backends override all three as before.
+- New `branch_ahead_behind` method on `VcsBackend` with an unsupported
+  default; overridden by `GitBackend` and delegated by `JjBackend`.
+- Rustdoc on `VcsBackend` now states the pre-v1.0 extension stance:
+  the trait is implementable but not fully stable; new methods will carry
+  defaults where a truthful default exists; `Repository` consumers have
+  stronger guarantees than custom-backend implementors.
+
+**`ObjectId` foundation type (RFC 031)**
+
+- New public types in `endringer-core` (re-exported from `endringer`):
+  - `ObjectId` — opaque identifier for any Git/jj object (blob, tree,
+    commit, tag). Mirrors `CommitId` (SHA-1 / SHA-256, hex encoding,
+    `from_hex` / `from_bytes` / `as_bytes` / `short` / `Display`, `Ord`).
+  - `ObjectIdFromHexError` — error type from `ObjectId::from_hex`.
+- `CommitId::to_object_id(&self) -> ObjectId` — lossless conversion.
+- `From<CommitId> for ObjectId` — infallible; a commit id is always a
+  valid object id.
+- `ObjectId::assume_commit(self) -> CommitId` — named conversion for
+  callers that have verified (or assert) the object is a commit; avoids
+  a silent `From<ObjectId> for CommitId` that would discard kind information.
+- `endringer-git/src/util.rs`: added `gix_id_to_object_id` helper
+  alongside the existing `gix_id_to_commit_id`.
+- **`endringer-core/src/types.rs` split**: identity types (`CommitId`,
+  `ObjectId`, their error types, and the shared hex helpers) have been
+  extracted into `endringer-core/src/types/identity.rs` following the
+  Rust 2018 module style. All public paths are unchanged
+  (`endringer_core::types::CommitId`, etc.) — the move is purely
+  structural.
+
+**`AheadBehind` type and ahead/behind API (RFC 004)**
+
+- New public type `AheadBehind { ahead: usize, behind: usize,
+  merge_base: Option<CommitId> }` in `endringer-core`, re-exported from
+  `endringer`.
+- `Repository::ahead_behind(local, upstream) -> Result<AheadBehind>` —
+  symmetric-difference count equivalent to
+  `git rev-list --left-right --count local...upstream`. Cost is
+  O(commits between the merge base and the two tips), not O(full history).
+- `Repository::branch_ahead_behind(branch) -> Result<Option<AheadBehind>>`
+  — resolves the configured upstream of a local branch via
+  `branch.<name>.remote` / `branch.<name>.merge` git config; returns
+  `Ok(None)` when no upstream is configured.
+- Both methods available on `AsyncRepository` in `endringer-async`.
+- Git implementation uses a two-pass symmetric-difference BFS:
+  pass 1 propagates LEFT/RIGHT reachability to every ancestor; pass 2
+  counts LEFT-only commits as `ahead` and RIGHT-only as `behind`. Common
+  ancestors (BOTH) are not counted. Handles identical tips, fast-forward,
+  diverged, merge commits, and unrelated histories.
+- `GitBackend` config reading for branch upstream uses
+  `gix::config::Snapshot::string_by` with `branch.<name>` subsection
+  lookup.
+- `JjBackend` delegates `ahead_behind` and `branch_ahead_behind` to its
+  underlying `GitBackend`.
+
+### Changed
+
+- `VcsBackend` now has `ahead_behind` as a **required** method (no safe
+  default exists — an empty result would be misleading). Custom backends
+  must implement it. The method count increases from 23 to 24 required
+  methods, but the 4 optional-empty methods and 4 write-side defaults
+  reduce the *minimum* implementation burden from 23 to 16 methods for
+  backends that don't need tags or metadata.
+
+### Internal
+
+- `endringer-core/src/types.rs`: added `AheadBehind`; identity types
+  split to `types/identity.rs`.
+- `endringer-git/src/graph.rs`: rewrote with two-pass BFS; removed the
+  naive double-walk sketch; uses gix parent-ID iteration via
+  `ObjectId::from_hex(&**p)` on the `&BStr` parent refs.
+- `endringer-git/src/backend.rs`: dispatches `ahead_behind` and
+  `branch_ahead_behind` to `graph::` module.
+- All 5 RFC files moved from `rfcs/proposed/` to `rfcs/done/` (RFC 001,
+  002 → v0.20.0; RFC 003, 031, 004 → v0.21.0).
+
+### Tests
+
+- `crates/endringer/tests/git_graph.rs` (10 tests): identical tips,
+  local one ahead, local two behind, both diverged, unrelated histories,
+  merge commit in history, missing commit ID error, and three branch
+  upstream tests. Every git case asserts exact parity with
+  `git rev-list --left-right --count`.
+- `crates/endringer/tests/vcsbackend_defaults.rs` (9 tests): RFC 003
+  acceptance — optional-empty defaults return empty, write-side defaults
+  return errors, minimal backend compiles and constructs via
+  `Repository::with_backend`.
+- `crates/endringer-async/tests/async_tests.rs`: 3 new async parity
+  tests for `ahead_behind` and `branch_ahead_behind`.
+- `crates/endringer-core/src/types/identity.rs`: 11 unit tests for
+  `CommitId`, `ObjectId`, and their conversions.
+
+---
+
+## [0.21.0] — 2026-06-10
+
+This release implements **RFC 003** (`VcsBackend` default implementations and
+extension stance), **RFC 031** (`ObjectId` identity foundation), and **RFC 004**
+(ahead/behind graph computation). It adds 37 new tests (125 total, 0 failures).
+
+### Breaking changes
+
+- `VcsBackend` now requires implementing `ahead_behind` (new required core
+  method). No existing crate-local backend was broken; only custom backends
+  implementing the trait directly need updating. All other new trait methods
+  have defaults.
+
+### Added
+
+**RFC 003 — `VcsBackend` default implementations and extension stance**
+
+- `remote_url`, `submodules`, `stash_entries`, and `worktrees` now have
+  default implementations in `VcsBackend` (returning `None` / empty `Vec`
+  respectively). Custom backends no longer need to implement these to compile.
+- `create_tag`, `create_annotated_tag`, and `delete_tag` now have unsupported-
+  feature error defaults. Custom backends that do not support tag writes compile
+  without implementing them.
+- `branch_ahead_behind` has an unsupported-feature error default; backends that
+  can resolve upstream config should override it.
+- The `VcsBackend` module doc now states the pre-v1.0 extension stance: the
+  trait is implementable but not yet fully stable; new required methods will
+  always be given a default implementation where a truthful default exists.
+- New integration test `vcsbackend_defaults.rs` verifies that a minimal backend
+  (implementing only required core methods) compiles and that all defaults return
+  the documented values.
+
+**RFC 031 — `ObjectId` identity foundation**
+
+- `ObjectId` and `ObjectIdFromHexError` are now public in `endringer-core` and
+  re-exported from `endringer`. Mirrors `CommitId` (opaque, `Vec<u8>` backed,
+  40/64 hex, `from_hex`/`from_bytes`/`as_bytes`/`short`/`Display`,
+  `Clone`/`Debug`/`Eq`/`Hash`/`Ord`). No `gix` type is exposed.
+- `CommitId::to_object_id(&self) -> ObjectId` — lossless conversion (a commit
+  id is always a valid object id).
+- `impl From<CommitId> for ObjectId` — for `.into()` call sites.
+- `ObjectId::assume_commit(self) -> CommitId` — the caller asserts the object
+  is a commit; endringer does not check kind. Use `Repository::find_commit` when
+  verification is needed.
+- `gix_id_to_object_id` helper in `endringer-git::util` for future backend
+  consumers (RFC 010/011 tree and ref enumeration).
+- `AheadBehind` is now defined in `endringer-core::types` (used by both
+  RFC 003 defaults and RFC 004).
+- `endringer-core/src/types.rs` split: identity types (`CommitId`, `ObjectId`,
+  `CommitIdFromHexError`, `ObjectIdFromHexError`, hex helpers) moved to
+  `types/identity.rs`; public paths are unchanged via re-exports.
+- 15 new unit tests in `endringer-core` covering both identity types, the
+  `CommitId`↔`ObjectId` conversions, and SHA-1/SHA-256 edge cases.
+
+**RFC 004 — Ahead/behind graph computation**
+
+- `Repository::ahead_behind(local, upstream) -> Result<AheadBehind>` — symmetric
+  difference between two commit tips. Equivalent to
+  `git rev-list --left-right --count local...upstream`. Uses a two-pass flag-
+  propagation walk; cost is O(commits between the merge base and the two tips).
+- `Repository::branch_ahead_behind(branch) -> Result<Option<AheadBehind>>` —
+  resolves `branch.<name>.remote` + `branch.<name>.merge` from git config to
+  find the upstream ref, then calls `ahead_behind`. Returns `Ok(None)` when no
+  upstream is configured. Handles `remote = "."` (local upstream) correctly.
+- `AheadBehind` struct: `ahead: usize`, `behind: usize`,
+  `merge_base: Option<CommitId>`.
+- All edge cases covered: identical tips, fast-forward in either direction,
+  both diverged, unrelated histories (no merge base), merge commits in history,
+  missing commit ID (returns `Err`).
+- `VcsBackend::ahead_behind` is a required core method (no safe default exists).
+  `VcsBackend::branch_ahead_behind` has an unsupported-feature error default
+  (per RFC 003 convention); `GitBackend` and `JjBackend` override it.
+- Async wrappers: `AsyncRepository::ahead_behind(local, upstream)` and
+  `AsyncRepository::branch_ahead_behind(branch)`.
+- 10 new integration tests in `git_graph.rs` covering all RFC 004 §7.1 and §7.2
+  scenarios, with ground-truth comparison against `git rev-list --left-right --count`.
+- 3 new async parity tests in `async_tests.rs`.
+
+### Changed
+
+- RFC 001 and RFC 002 moved from `rfcs/proposed/` to `rfcs/done/` (shipped in
+  v0.20.0).
+- RFC 003, RFC 031, and RFC 004 moved from `rfcs/proposed/` to `rfcs/done/`
+  (shipped in this release).
+- `rfcs/README.md` updated with Implemented table.
+
+---
 
 This release implements **RFC 001** (handoff, archive, and release-manifest
 integrity) and **RFC 002** (public contract consistency and documentation

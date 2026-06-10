@@ -1,6 +1,6 @@
 # RFC 031 — Object identity foundation (`ObjectId` and `CommitId` relationship)
 
-**Status.** Proposed
+**Status.** Implemented (v0.21.0)
 **Priority.** P1
 **Target band.** v0.21.x (foundation; must land before RFC 006)
 **Breaking change.** No (additive type); enables a later non-breaking internal `CommitId` refactor

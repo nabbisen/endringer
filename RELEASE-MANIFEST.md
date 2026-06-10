@@ -1,6 +1,6 @@
 # endringer release manifest
 
-**Version.** v0.20.0
+**Version.** v0.21.0
 **Archive shape.** The release archive extracts with no intermediate parent
 directory. Files unpack directly into the extraction root (e.g.
 `tar -xf endringer-0.20.0.tar.gz` produces `Cargo.toml`, `crates/`, etc. in

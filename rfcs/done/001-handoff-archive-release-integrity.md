@@ -1,6 +1,6 @@
 # RFC 001 — Handoff, archive, and release-manifest integrity
 
-**Status.** Proposed  
+**Status.** Implemented (v0.20.0)  
 **Priority.** P0  
 **Target band.** v0.20.x  
 **Breaking change.** No  
