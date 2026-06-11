@@ -6,7 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.33.0] — 2026-06-11
+## [0.33.1] — 2026-06-11
+
+Dependency update. No public API changes.
+
+### Changed
+
+- `gix` updated from `0.83` to `0.84`. No source changes were required —
+  the upgrade was fully compatible. Also updated: `gix-blame` 0.13→0.14,
+  `gix-diff` 0.63→0.64, `gix-config` 0.56→0.57, `gix-discover` 0.51→0.52,
+  and 68 other `gix` sub-crates. Other dependency bumps: `bitflags`
+  2.11→2.13, `dashmap` 6.1→6.2, `filetime` 0.2.27→0.2.29.
+
+---
 
 This release closes the **"no stale docs contradictions"** stabilization gate
 (item 8/9). No code changes. All documentation was audited against the current
