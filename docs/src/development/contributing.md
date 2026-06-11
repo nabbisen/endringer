@@ -65,6 +65,22 @@ This avoids `mod.rs` while sharing fixture code across test files.
 2. Add a `[x.y.z]` section to `CHANGELOG.md`.
 3. Update the release history table in `ROADMAP.md`.
 4. Run `cargo test --workspace --lib --tests` — all must pass.
-5. Run the release script: `./scripts/release.sh`.
-6. Push branch and tag: `git push origin master && git push origin vX.Y.Z`.
-7. Publish: `cargo publish -p endringer-core && cargo publish -p endringer-git` etc.
+5. Run `sh scripts/check-public-contract.sh` — must pass.
+6. Commit all changes, then `git tag vX.Y.Z`.
+7. Build the release archive:
+   ```sh
+   STAGING=$(mktemp -d)
+   cp -a . "$STAGING/"
+   rm -rf "$STAGING/.git" "$STAGING/target"
+   tar -czf endringer-X.Y.Z.tar.gz -C "$STAGING" .
+   sh scripts/verify-release-manifest.sh "$STAGING"
+   rm -rf "$STAGING"
+   ```
+8. Publish crates in dependency order:
+   ```sh
+   cargo publish -p endringer-core
+   cargo publish -p endringer-git
+   cargo publish -p endringer-jj
+   cargo publish -p endringer
+   cargo publish -p endringer-async
+   ```

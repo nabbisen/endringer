@@ -21,7 +21,7 @@ Feature flags are allowed only when one of the following is true:
 
 1. A dependency is large and not needed by all users.
 2. An optional backend materially affects compile time.
-3. An unstable extension must be guarded before stabilisation.
+3. An unstable extension must be guarded before stabilization.
 4. Test or fixture support must not affect production builds.
 
 Feature flags must not change semantic contracts silently. If a method is

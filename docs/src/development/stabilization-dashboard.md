@@ -1,4 +1,4 @@
-# Stabilisation dashboard
+# Stabilization dashboard
 
 Tracks the evidence required before a v1.0 discussion can start.
 Updated as RFCs land. See [release-gates.md](./release-gates.md) for definitions.
@@ -18,7 +18,7 @@ v1.0 is **not planned**.
 | Path/platform robustness matrix | ✅ Done | RFC 014 | `git_platform.rs`; platform-matrix.md; 8 tests |
 | Git CLI parity harness | ✅ Done | RFC 015 | `git_cli.rs`, `git_cli_parity.rs`; 6 parity tests; known-deviations.md |
 | Performance baseline | ✅ Done | RFC 017 | Criterion benchmarks; performance.md; classification table |
-| No stale docs contradictions | 🔲 Open | — | Ongoing; known gaps tracked in ROADMAP |
+| No stale docs contradictions | ✅ Done | — | v0.33.0 docs audit: all pages verified against codebase |
 | Maintainer v1 approval | 🔲 Open | — | Explicit gate; not triggered by code alone |
 
 ---
@@ -53,4 +53,4 @@ See `rfcs/proposed/` for the full list (012–029).
 
 ---
 
-*Last updated: v0.32.0*
+*Last updated: v0.33.0*

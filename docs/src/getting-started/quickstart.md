@@ -6,14 +6,14 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-endringer = "0.19"
+endringer = "0.33"
 anyhow    = "1"
 ```
 
 For async usage, also add:
 
 ```toml
-endringer-async = "0.19"
+endringer-async = "0.33"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 

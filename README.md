@@ -17,7 +17,7 @@ All results are owned values; no internal state is held between calls.
 
 ```toml
 [dependencies]
-endringer = "0.19"
+endringer = "0.33"
 ```
 
 ---

@@ -330,7 +330,7 @@ dependencies = [
 
 [[package]]
 name = "endringer"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "anyhow",
  "criterion",
@@ -342,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-async"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "anyhow",
  "endringer",
@@ -352,14 +352,14 @@ dependencies = [
 
 [[package]]
 name = "endringer-core"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "anyhow",
 ]
 
 [[package]]
 name = "endringer-git"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "anyhow",
  "endringer-core",
@@ -368,7 +368,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-jj"
-version = "0.32.0"
+version = "0.33.0"
 dependencies = [
  "anyhow",
  "endringer-core",

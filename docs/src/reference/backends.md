@@ -47,9 +47,9 @@ absent from this API:
 - the jj **working-copy commit** (a special ref written by jj);
 - **first-class conflict objects** (conflicts stored inside commits).
 
-This is the documented "git-store view" stance. A future RFC may add
-jj-native surface once the storage format stabilises; that work is tracked
-separately (see RFC advancement themes §3 and §5).
+This is the documented "git-store view" stance. Adding jj-native concepts
+(change IDs, operation log) would require verifying their storage format
+stability and is deferred to a future release.
 
 **Verified jj version:** tests are written against jj ≥ 0.18. The CI
 job runs `jj --version` and records the result. If you observe failures

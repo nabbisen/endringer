@@ -1,9 +1,9 @@
 # Release quality gates
 
 This document defines what must be true before shipping a release.
-It has three levels: patch, minor, and the stabilisation discussion gate.
+It has three levels: patch, minor, and the stabilization discussion gate.
 
-v1.0 is **not planned**. The stabilisation gate defines the evidence required
+v1.0 is **not planned**. The stabilization gate defines the evidence required
 before that conversation can even start. A gate being open does not imply a
 schedule; it records what is still missing.
 
@@ -33,10 +33,10 @@ Required before any minor release (`x.Y.0`), in addition to the patch gate:
 
 ---
 
-## Stabilisation discussion gate
+## Stabilization discussion gate
 
 v1.0 discussion is blocked until **all** of the following are true.
-See the [stabilisation dashboard](./stabilization-dashboard.md) for current status.
+See the [stabilization dashboard](./stabilization-dashboard.md) for current status.
 
 | Gate item | RFC |
 |---|---|

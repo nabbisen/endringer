@@ -6,7 +6,68 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.32.0] — 2026-06-11
+## [0.33.0] — 2026-06-11
+
+This release closes the **"no stale docs contradictions"** stabilization gate
+(item 8/9). No code changes. All documentation was audited against the current
+codebase; every discrepancy found was corrected. 317 tests continue to pass.
+
+### Changed — documentation audit
+
+**`docs/src/reference/api-overview.md`** — complete rewrite:
+- Return type corrected from `anyhow::Result<_>` to `endringer::Result<T>`.
+- `remote_url` return type corrected to `Result<Option<String>>`.
+- All methods added since the page was last updated are now listed: `query_commits`,
+  `rich_worktree_status`, `operation_state`, `unmerged_paths`, `conflict_summary`,
+  `blame_at`, `tree_at_commit`, `tree_at_path`, `diff_entries`, `snapshot`,
+  `references`, `references_by_kind`, `remotes`, `ahead_behind`,
+  `branch_ahead_behind`, `branch_tracking`, `local_branch_tracking`,
+  `is_merged_into`, `merge_base`, `is_ancestor`, `repository_info`,
+  `stash_detail`, `stash_diff`, `submodule_summaries`, `worktree_details`.
+
+**`docs/src/reference/types.md`** — complete rewrite:
+- `TagAnnotation` now shows `tagger_email` field (added v0.28.0).
+- All RFC types added since v0.19.0 now documented: `CommitQuery`,
+  `CommitQueryResult`, `BranchTrackingInfo`, `AheadBehind`, `RichWorktreeStatus`,
+  `RichStatusEntry`, `FileStatusKind`, `StatusOptions`, `OperationState`,
+  `ConflictSummary`, `ConflictPath`, `ConflictStage`, `DiffEntry`, `DiffOptions`,
+  `DiffChangeKind`, `TreeEntry`, `RefInfo`, `RefTarget`, `RefKind`, `RemoteInfo`,
+  `RepositoryInfo`, `HeadState`, `ObjectFormat`, `SubmoduleSummary`,
+  `SubmoduleState`, `StashDetail`, `StashId`, `WorktreeDetail`, `WorktreeState`,
+  `RepositorySnapshot`, `SnapshotRequest`.
+
+**`docs/src/getting-started/quickstart.md`** — version strings updated from
+`"0.19"` to `"0.32"`.
+
+**`docs/src/introduction.md`** — capabilities table updated with all new read
+surfaces added since v0.19.0: operation state, rich status, bounded history,
+tree snapshots, references, remotes, detail reads, snapshot, diff entries.
+"Does not do" list expanded with network operations and config management.
+
+**`docs/src/development/architecture.md`** — complete rewrite of the
+`endringer-git` module table (adds 10 new modules: `blame.rs blame_at`,
+`conflict.rs`, `diff.rs diff_entries`, `info.rs`, `operation.rs`, `refs.rs`,
+`stash_detail.rs`, `submodule_summary.rs`, `tree.rs`, `worktree_detail.rs`)
+and the test structure (adds all 17 test files added since v0.19.0).
+
+**`docs/src/development/contributing.md`** — release checklist updated: removes
+stale `./scripts/release.sh` and `git push origin master` references; adds
+`check-public-contract.sh` step; shows the correct tarball build procedure.
+
+**`docs/src/reference/backends.md`** — stale "RFC advancement themes §3 and §5"
+reference replaced with plain prose.
+
+**`docs/src/reference/contract.md`** — three new contracts added: typed errors
+since v0.23.0, `diff_entries` default behaviour, snapshot semantics.
+
+**`README.md`** — version string updated from `"0.19"` to `"0.32"`.
+
+**`docs/src/development/stabilization-dashboard.md`** — "no stale docs
+contradictions" gate item marked ✅ Done. **8/9 gate items now complete.**
+The only remaining open gate is "Maintainer v1.0 approval" — a deliberate
+human decision, not a code or documentation task.
+
+---
 
 This release implements **RFC 014** (platform matrix), **RFC 015** (CLI parity
 harness), **RFC 017** (performance benchmarks), **RFC 026** (conformance docs),
@@ -275,7 +336,7 @@ Tests:
 ---
 
 This release implements **RFC 022** (tag API refinement) and **RFC 030**
-(release quality gates and stabilisation dashboard). It adds 3 new tests
+(release quality gates and stabilization dashboard). It adds 3 new tests
 (227 total, 0 failures).
 
 ### Added
@@ -292,12 +353,12 @@ This release implements **RFC 022** (tag API refinement) and **RFC 030**
   be peeled are skipped by list methods.
 - Migration note added to `TagInfo` doc comment.
 
-**RFC 030 — Release quality gates and stabilisation dashboard**
+**RFC 030 — Release quality gates and stabilization dashboard**
 
 - `docs/src/development/release-gates.md`: three gate levels (patch, minor,
-  stabilisation discussion). Each level is a checklist; they are cumulative.
+  stabilization discussion). Each level is a checklist; they are cumulative.
 - `docs/src/development/stabilization-dashboard.md`: per-item status table
-  covering the stabilisation discussion gate. Currently 4/9 items complete;
+  covering the stabilization discussion gate. Currently 4/9 items complete;
   5 remain open. v1.0 is explicitly not planned.
 - Both files added to `docs/src/SUMMARY.md`.
 

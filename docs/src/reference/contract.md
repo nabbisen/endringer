@@ -96,3 +96,51 @@ in scope to verify no `gix` type leaks through `endringer-core`.
 - Both backends read the object store directly through `gix`.
 - The `git` CLI is used only in integration test fixtures (build/test
   dependency, not runtime).
+
+---
+
+## Typed errors since v0.23.0
+
+- All public methods return `endringer::Result<T>`, not `anyhow::Result<T>`.
+- Unknown objects/refs return `Error::NotFound { kind, name }`.
+- Opening a non-repository path returns `Error::NotARepository`.
+- Unsupported optional backend features return `Error::UnsupportedBackendFeature`.
+- `remote_url(name)` returns `Result<Option<String>>` — `Ok(None)` when the remote does not exist.
+
+**Enforcing tests:** `crates/endringer/tests/git_error_model.rs`
+
+---
+
+## `diff_entries` default behaviour
+
+- `diff_entries(from, to, DiffOptions::default())` returns the same paths as
+  `diff(from, to)` expressed as `DiffEntry` values, with no rename/copy
+  detection applied.
+- `detect_renames: true` is accepted without error. When heuristic detection
+  is not yet implemented for a given backend, the output is identical to the
+  default.
+- The `DiffSummary` returned by `diff()` is always stable and cheap.
+
+**Enforcing tests:** `crates/endringer/tests/git_snapshot_diff.rs`
+
+---
+
+## Snapshot semantics
+
+- `snapshot()` is a batch read, not an atomic snapshot. A concurrent repository
+  mutation can produce a mixed view across the included fields.
+- `RepositoryInfo` is always populated regardless of `SnapshotRequest` flags.
+- Fields not requested are `None` in the result.
+
+**Enforcing tests:** `crates/endringer/tests/git_snapshot_diff.rs`
+
+---
+
+## `query_commits` truncation
+
+- `CommitQueryResult::truncated` is `true` if and only if `max_count` was
+  provided and at least one more commit exists beyond the returned page.
+- `skip` offsets from the start of the walk; it is O(skip) in the history depth.
+- No commit appears in the result more than once.
+
+**Enforcing tests:** `crates/endringer/tests/git_unusual_repos.rs`

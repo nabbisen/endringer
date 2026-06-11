@@ -9,25 +9,31 @@ are needed.
 
 | Category | Capabilities |
 |---|---|
-| **Status** | Current branch, HEAD commit, dirty check, per-file worktree status |
-| **History** | Full commit log, time-range filter, commit lookup by ID |
-| **Branches** | Local and remote-tracking branches |
+| **Status** | Current branch, HEAD commit, dirty check, per-file worktree status, rich status with conflict info |
+| **Operation state** | In-progress Merge / Rebase / CherryPick / Revert / Bisect detection |
+| **History** | Full commit log, bounded pages, time-range filter, commit lookup by ID |
+| **Branches** | Local and remote-tracking branches, upstream tracking, ahead/behind counts |
 | **Tags** | List, create (lightweight + annotated), delete |
-| **Graph** | Merge base, ancestry check, parent commit IDs |
-| **Diff** | File-level summary (added / modified / deleted) between two commits |
-| **Blame** | Per-line commit attribution |
+| **Graph** | Merge base, ancestry check, parent commit IDs, is-merged-into predicate |
+| **Diff** | File-level summary (added / modified / deleted); rename/copy-aware diff |
+| **Blame** | Per-line commit attribution at HEAD or any historical commit |
 | **File content** | Read any file at any commit |
-| **Metadata** | Submodules, stash entries, linked worktrees |
-| **Jujutsu** | All of the above via `.jj/` repositories (git backend) |
+| **Tree snapshots** | Non-recursive directory listing at any commit |
+| **References** | All refs (branches, tags, HEAD) with kind and target |
+| **Remotes** | Configured remote names and fetch/push URLs |
+| **Metadata** | Submodules, stash entries, linked worktrees (with rich detail variants) |
+| **Snapshot** | Batch read for status widget data (reduces inter-call drift) |
+| **Jujutsu** | All reads via `.jj/` repositories (git backend, no `jj` binary) |
 | **Async** | Optional `endringer-async` crate wraps every method in `spawn_blocking` |
 
 ## What it does not do
 
 - Write commits, merge branches, or push
-- Manage application config or scheduling
-- Provide UI or i18n
+- Fetch, clone, or pull from remotes
+- Manage application config, scheduling, or UI
 
-These are the caller's concerns.
+These are the caller's concerns. See the [boundary cookbook page](cookbook/write-then-read-boundary.md)
+for the recommended write-then-read pattern.
 
 ## Next steps
 
