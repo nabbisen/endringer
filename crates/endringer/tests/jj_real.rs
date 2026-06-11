@@ -214,3 +214,76 @@ fn jj_support_boundary_is_git_view() {
     // Just verify the test runs — boundary is checked at compile time.
     assert!(true, "jj-native concepts are not in the public API (compile-time check)");
 }
+
+// ── Delegated git-store reads work on jj repositories ────────────────────── //
+// These methods were added to GitBackend across later RFCs; JjBackend now
+// delegates each to its inner GitBackend since they are pure git-store reads.
+
+#[test]
+fn jj_real_query_commits_bounded() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    let page = repo
+        .query_commits(endringer::CommitQuery::head_page(5))
+        .expect("query_commits should work on jj");
+    assert!(!page.commits.is_empty(), "bounded history should return commits");
+}
+
+#[test]
+fn jj_real_tree_at_commit() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    let head = repo.list_commits().expect("list_commits")[0].commit_id.clone();
+    let tree = repo.tree_at_commit(&head).expect("tree_at_commit should work on jj");
+    assert!(!tree.is_empty(), "root tree should list entries");
+}
+
+#[test]
+fn jj_real_references_present() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    let refs = repo.references().expect("references should work on jj");
+    assert!(!refs.is_empty(), "jj repo should expose at least HEAD/branch refs");
+}
+
+#[test]
+fn jj_real_rich_worktree_status() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    // Should succeed (not UnsupportedBackendFeature); content may be empty.
+    let _status = repo
+        .rich_worktree_status(endringer::StatusOptions::default())
+        .expect("rich_worktree_status should work on jj");
+}
+
+#[test]
+fn jj_real_diff_entries() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    let commits = repo.list_commits().expect("list_commits");
+    if commits.len() < 2 {
+        return; // need two commits to diff
+    }
+    let _entries = repo
+        .diff_entries(&commits[1].commit_id, &commits[0].commit_id, endringer::DiffOptions::default())
+        .expect("diff_entries should work on jj");
+}
+
+#[test]
+fn jj_real_operation_state_remains_unsupported() {
+    if !require_jj() { return; }
+    let f = JjFixture::native();
+    let repo = jj_repository(f.path()).expect("open repo");
+    // jj intentionally does NOT delegate operation_state (it models operations
+    // via its own op log, and repository_info declares operation_state: false).
+    let info = repo.repository_info().expect("repository_info");
+    assert!(!info.capabilities.operation_state,
+        "jj should declare operation_state unsupported");
+    assert!(!info.capabilities.conflict_state,
+        "jj should declare conflict_state unsupported");
+}

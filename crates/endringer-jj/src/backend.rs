@@ -21,7 +21,7 @@ use std::time::SystemTime;
 use anyhow::bail;
 use endringer_core::error::{Error as CrateError, Result};
 use endringer_core::backend::VcsBackend;
-use endringer_core::types::{AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo, DiffSummary, RepositoryInfo, SortOrder, StashEntry, StatusDigest, SubmoduleInfo, TagInfo, WorktreeInfo, WorktreeStatus};
+use endringer_core::types::{AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo, CommitQuery, CommitQueryResult, DiffEntry, DiffOptions, DiffSummary, RefInfo, RefKind, RemoteInfo, RepositoryInfo, RichWorktreeStatus, SortOrder, StashDetail, StashEntry, StatusDigest, StatusOptions, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry, WorktreeDetail, WorktreeInfo, WorktreeStatus};
 use endringer_git::GitBackend;
 
 /// Jujutsu backend backed by the repository's underlying git object store.
@@ -145,4 +145,25 @@ impl VcsBackend for JjBackend {
     fn submodules(&self) -> Result<Vec<SubmoduleInfo>> { self.git.submodules() }
     fn stash_entries(&self) -> Result<Vec<StashEntry>> { self.git.stash_entries() }
     fn worktrees(&self) -> Result<Vec<WorktreeInfo>> { self.git.worktrees() }
+
+    // ── Pure git-store reads: delegate to the inner GitBackend ──────────── //
+    // These operate on the underlying git object store and behave identically
+    // for jj repositories. (operation_state, unmerged_paths, and
+    // conflict_summary are intentionally NOT delegated: jj models operations
+    // and conflicts differently from git, and repository_info() declares
+    // operation_state and conflict_state as unsupported.)
+
+    fn query_commits(&self, query: CommitQuery) -> Result<CommitQueryResult> { self.git.query_commits(query) }
+    fn blame_at(&self, path: &std::path::Path, commit_id: &CommitId) -> Result<Vec<BlameEntry>> { self.git.blame_at(path, commit_id) }
+    fn tree_at_commit(&self, commit_id: &CommitId) -> Result<Vec<TreeEntry>> { self.git.tree_at_commit(commit_id) }
+    fn tree_at_path(&self, commit_id: &CommitId, path: &std::path::Path) -> Result<Vec<TreeEntry>> { self.git.tree_at_path(commit_id, path) }
+    fn references(&self) -> Result<Vec<RefInfo>> { self.git.references() }
+    fn references_by_kind(&self, kind: RefKind) -> Result<Vec<RefInfo>> { self.git.references_by_kind(kind) }
+    fn remotes(&self) -> Result<Vec<RemoteInfo>> { self.git.remotes() }
+    fn diff_entries(&self, from: &CommitId, to: &CommitId, options: DiffOptions) -> Result<Vec<DiffEntry>> { self.git.diff_entries(from, to, options) }
+    fn rich_worktree_status(&self, options: StatusOptions) -> Result<RichWorktreeStatus> { self.git.rich_worktree_status(options) }
+    fn submodule_summaries(&self) -> Result<Vec<SubmoduleSummary>> { self.git.submodule_summaries() }
+    fn stash_detail(&self, index: usize) -> Result<StashDetail> { self.git.stash_detail(index) }
+    fn stash_diff(&self, index: usize) -> Result<DiffSummary> { self.git.stash_diff(index) }
+    fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> { self.git.worktree_details() }
 }

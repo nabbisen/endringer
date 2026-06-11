@@ -6,7 +6,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.33.1] — 2026-06-11
+## [0.33.2] — 2026-06-11
+
+Bug fix: the Jujutsu backend now exposes read methods it was silently
+rejecting.
+
+### Fixed
+
+- `JjBackend` delegated only the original ~29 `VcsBackend` methods to its
+  inner `GitBackend`. The read methods added across later RFCs were never
+  delegated, so on a jj repository they fell through to the trait's default
+  implementation and returned `UnsupportedBackendFeature` — even though they
+  are pure git-store reads that work identically on jj's underlying git
+  object store.
+
+  The following 13 methods now delegate to the git backend and work on jj
+  repositories: `query_commits`, `blame_at`, `tree_at_commit`, `tree_at_path`,
+  `references`, `references_by_kind`, `remotes`, `diff_entries`,
+  `rich_worktree_status`, `submodule_summaries`, `stash_detail`, `stash_diff`,
+  `worktree_details`.
+
+  Three methods remain intentionally undelegated because jj models the
+  underlying concepts differently and `repository_info()` already declares
+  them unsupported: `operation_state` (jj uses its operation log, not git
+  marker files) and `unmerged_paths` / `conflict_summary` (jj stores conflicts
+  in commits, not the index).
+
+  Added `jj_real.rs` tests covering the newly-delegated reads and asserting
+  the three intentional omissions stay unsupported. No public API change; no
+  change to the git backend.
+
+---
 
 Dependency update. No public API changes.
 
