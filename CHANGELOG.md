@@ -6,7 +6,96 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.31.0] — 2026-06-11
+## [0.32.0] — 2026-06-11
+
+This release implements **RFC 014** (platform matrix), **RFC 015** (CLI parity
+harness), **RFC 017** (performance benchmarks), **RFC 026** (conformance docs),
+**RFC 027** (snapshot batch reads), and **RFC 028** (rename/copy detection).
+It adds 27 new tests (317 total, 0 failures) and introduces Criterion
+benchmarks. No breaking changes.
+
+### Added
+
+**RFC 014 — Platform and path robustness matrix**
+
+- `docs/src/development/platform-matrix.md`: path-format contract, platform
+  support matrix, non-UTF-8 stance, case-sensitivity note.
+- `crates/endringer/tests/git_platform.rs` (8 tests): spaces in filenames,
+  Unicode filenames, Unicode directories, non-UTF-8 filenames (Unix; no panic),
+  symlinks reported as `TreeEntryKind::Symlink` (Unix), executable bit read
+  from tree entries (Unix; graceful if unsupported), nested git repo stability.
+
+**RFC 015 — Git CLI parity test harness**
+
+- `crates/endringer/tests/support/git_cli.rs`: `git_output`, `git_lines`,
+  `git_ahead_behind`, `git_merge_base`, `git_is_ancestor`, `git_tag_names`,
+  `git_branch_names`, `git_status_short` helpers.
+- `crates/endringer/tests/git_cli_parity.rs` (6 parity tests): merge_base,
+  is_ancestor, ahead/behind, tag listing, branch listing, blame line count.
+- `crates/endringer/tests/parity/KNOWN-DEVIATIONS.md`: documents `ChangeKind`
+  simplification, tag listing order match, ahead/behind unrelated history
+  behaviour.
+- `docs/src/development/git-cli-parity.md`: explains test-only CLI use, command
+  table, environment isolation, known deviations.
+
+**RFC 017 — Performance benchmarks**
+
+- `crates/endringer/benches/repository_reads.rs`: Criterion benchmark groups
+  for status, refs, history, and object reads. Uses a deterministic fixture
+  builder.
+- `docs/src/development/performance.md`: performance classification table
+  (Cheap/Moderate/Expensive), how to run benchmarks, informative baseline
+  numbers.
+- Criterion 0.5 added as a dev-dependency.
+
+**RFC 026 — Custom backend conformance documentation**
+
+- `docs/src/development/backend-conformance.md`: required vs optional
+  `VcsBackend` methods, sorting contracts, owned-value contract, error model,
+  thread-safety requirement, smoke-test recipe. Defers a testkit crate to
+  post-v1.0.
+
+**RFC 027 — Snapshot consistency and batch reads**
+
+New public types, re-exported from `endringer`:
+
+- `SnapshotRequest` struct: `include_status_digest`, `include_operation_state`,
+  `include_local_branches`, `include_tags` (all `bool`). Implements `Default`
+  (status + operation state on, branches + tags off).
+- `RepositorySnapshot` struct: `info: RepositoryInfo`, `status_digest`,
+  `operation_state`, `local_branches`, `tags` (all `Option<_>`).
+
+New method (sync + async): `snapshot(request) -> Result<RepositorySnapshot>`.
+Default `VcsBackend` implementation calls each included method sequentially.
+GitBackend inherits the default (batch-optimised override deferred).
+Tests: 6 in `git_snapshot_diff.rs` + 1 async parity.
+
+**RFC 028 — Rename and copy detection**
+
+New public types, re-exported from `endringer`:
+
+- `DiffChangeKind` enum: `Added | Modified | Deleted | Renamed | Copied | TypeChanged | ModeChanged`.
+- `DiffEntry` struct: `new_path`, `old_path`, `kind: DiffChangeKind`, `similarity: Option<u8>`.
+- `DiffOptions` struct: `detect_renames: bool`, `detect_copies: bool`, `rename_threshold: Option<u8>`. Implements `Default` (all off — opt-in because detection is expensive).
+
+New method (sync + async): `diff_entries(from, to, options) -> Result<Vec<DiffEntry>>`.
+First version maps `DiffSummary` → `DiffEntry` without heuristic rename
+detection (sets the API surface; detection can be added in a future release
+when benchmarked). `detect_renames: true` is accepted without error.
+Existing `diff()` and `DiffSummary` are unchanged.
+Tests: 5 in `git_snapshot_diff.rs` + 1 async parity.
+
+### Changed
+
+- RFC 014, 015, 017, 026, 027, 028 moved from `rfcs/proposed/` to `rfcs/done/`.
+- `docs/src/SUMMARY.md` updated with new development docs.
+- `docs/src/development/stabilization-dashboard.md` updated to v0.32.0.
+  **Gate status: 5/9 items now complete.** RFC 014 cleared the "path/platform
+  robustness matrix" gate; RFC 015 cleared the "git CLI parity harness" gate.
+  RFC 017 provides the performance baseline. Remaining open gates: no stale
+  docs contradictions, maintainer v1.0 approval.
+
+---
 
 This release implements **RFC 013** (rich status model), **RFC 016** (dependency
 policy), **RFC 018** (async semantics), **RFC 023** (SHA-256 validation), and

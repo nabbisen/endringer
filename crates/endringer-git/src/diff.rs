@@ -62,3 +62,45 @@ pub(crate) fn diff(repository: &Repository, from: &CommitId, to: &CommitId) -> R
 
     Ok(summary)
 }
+
+// ── RFC 028: diff_entries ─────────────────────────────────────────────────── //
+
+pub(crate) fn diff_entries(
+    repo: &Repository,
+    from: &CommitId,
+    to: &CommitId,
+    options: endringer_core::types::DiffOptions,
+) -> Result<Vec<endringer_core::types::DiffEntry>> {
+    use endringer_core::types::{DiffChangeKind, DiffEntry};
+
+    // First version: map DiffSummary → DiffEntry without rename detection.
+    // When rename detection is requested and gix exposes it, this can be
+    // replaced with a richer walk.
+    let summary = diff(repo, from, to)?;
+
+    let mut entries: Vec<DiffEntry> = Vec::new();
+
+    for path in summary.added {
+        entries.push(DiffEntry { new_path: Some(path), old_path: None, kind: DiffChangeKind::Added, similarity: None });
+    }
+    for path in summary.modified {
+        entries.push(DiffEntry { new_path: Some(path.clone()), old_path: Some(path), kind: DiffChangeKind::Modified, similarity: None });
+    }
+    for path in summary.deleted {
+        entries.push(DiffEntry { new_path: None, old_path: Some(path), kind: DiffChangeKind::Deleted, similarity: None });
+    }
+
+    // Sort by new_path (falling back to old_path for deletions).
+    entries.sort_by(|a, b| {
+        let ak = a.new_path.as_ref().or(a.old_path.as_ref());
+        let bk = b.new_path.as_ref().or(b.old_path.as_ref());
+        ak.cmp(&bk)
+    });
+
+    // Note: detect_renames and detect_copies are accepted in options but
+    // not yet implemented. They will produce the same output as detect=false
+    // in this version.
+    let _ = options;
+
+    Ok(entries)
+}

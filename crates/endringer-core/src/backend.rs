@@ -29,9 +29,10 @@ use crate::error::Result;
 use crate::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
     CommitQuery, CommitQueryResult,
-    ConflictSummary, DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
-    RepositoryInfo, RichWorktreeStatus, SortOrder, StashDetail, StashEntry,
-    StatusDigest, StatusOptions,
+    ConflictSummary, DiffEntry, DiffOptions, DiffSummary,
+    OperationState, RefInfo, RefKind, RemoteInfo,
+    RepositoryInfo, RepositorySnapshot, RichWorktreeStatus, SnapshotRequest,
+    SortOrder, StashDetail, StashEntry, StatusDigest, StatusOptions,
     SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
     WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
@@ -343,5 +344,48 @@ pub trait VcsBackend: Send + Sync {
     /// Default: unsupported-feature error.
     fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
         Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "worktree_details" })
+    }
+
+    // ── Snapshot batch read (RFC 027) ──────────────────────────────────── //
+
+    /// Returns a batch of related reads collected in one method call.
+    ///
+    /// Reduces inter-call drift for status-widget data. Not an atomic
+    /// snapshot — concurrent mutation can still produce a mixed view.
+    ///
+    /// Default: calls each included method sequentially.
+    fn snapshot(&self, request: SnapshotRequest) -> Result<RepositorySnapshot> {
+        let info = self.repository_info()?;
+        let status_digest = if request.include_status_digest {
+            Some(self.status_digest()?)
+        } else { None };
+        let operation_state = if request.include_operation_state {
+            self.operation_state().ok()
+        } else { None };
+        let local_branches = if request.include_local_branches {
+            Some(self.local_branches()?)
+        } else { None };
+        let tags = if request.include_tags {
+            Some(self.list_tags()?)
+        } else { None };
+        Ok(RepositorySnapshot { info, status_digest, operation_state, local_branches, tags })
+    }
+
+    // ── Rename/copy-aware diff (RFC 028) ──────────────────────────────── //
+
+    /// Returns a rename/copy-aware diff between `from` and `to`.
+    ///
+    /// When `options.detect_renames` is `false` (default), the result is
+    /// equivalent to `diff()` expressed as `DiffEntry` values. Rename
+    /// detection is opt-in because it can be expensive.
+    ///
+    /// Default: unsupported-feature error.
+    fn diff_entries(
+        &self,
+        _from: &CommitId,
+        _to: &CommitId,
+        _options: DiffOptions,
+    ) -> Result<Vec<DiffEntry>> {
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "diff_entries" })
     }
 }

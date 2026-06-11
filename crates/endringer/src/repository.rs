@@ -7,11 +7,11 @@ use endringer_core::error::Result;
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BackendKind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId,
-    CommitInfo, CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary,
-    OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo,
-    RichWorktreeStatus, SortOrder, StashDetail, StashEntry, StatusDigest,
-    StatusOptions, SubmoduleInfo, SubmoduleSummary, TagInfo, TreeEntry,
-    WorktreeDetail, WorktreeInfo, WorktreeStatus,
+    CommitInfo, CommitQuery, CommitQueryResult, ConflictSummary, DiffEntry, DiffOptions,
+    DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo, RepositoryInfo,
+    RepositorySnapshot, RichWorktreeStatus, SnapshotRequest, SortOrder,
+    StashDetail, StashEntry, StatusDigest, StatusOptions, SubmoduleInfo,
+    SubmoduleSummary, TagInfo, TreeEntry, WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
 use endringer_git::GitBackend;
 use endringer_jj::JjBackend;
@@ -183,6 +183,15 @@ impl Repository {
     /// Paths within each category of [`DiffSummary`] are sorted ascending.
     pub fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> {
         self.backend.diff(from, to)
+    }
+
+    /// Returns a rename/copy-aware diff between `from` and `to`.
+    ///
+    /// With `DiffOptions::default()`, equivalent to `diff()` but expressed
+    /// as `DiffEntry` values. Set `options.detect_renames = true` to enable
+    /// heuristic rename detection (may be expensive on large histories).
+    pub fn diff_entries(&self, from: &CommitId, to: &CommitId, options: DiffOptions) -> Result<Vec<DiffEntry>> {
+        self.backend.diff_entries(from, to, options)
     }
 
     // ── Remotes ────────────────────────────────────────────────────────── //
@@ -454,6 +463,17 @@ impl Repository {
     /// Missing worktrees are reported with `WorktreeState::MissingPath`.
     pub fn worktree_details(&self) -> Result<Vec<WorktreeDetail>> {
         self.backend.worktree_details()
+    }
+
+    // ── Snapshot batch read (RFC 027) ─────────────────────────────────── //
+
+    /// Returns a batch of related reads in one call to reduce inter-call drift.
+    ///
+    /// Use [`SnapshotRequest::default()`] for a status-widget snapshot
+    /// (status digest + operation state). Set `include_local_branches` or
+    /// `include_tags` for a fuller branch-table snapshot.
+    pub fn snapshot(&self, request: SnapshotRequest) -> Result<RepositorySnapshot> {
+        self.backend.snapshot(request)
     }
 }
 

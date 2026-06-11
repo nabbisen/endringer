@@ -1,6 +1,6 @@
 # RFC 028 — Rename and copy detection for diff, blame, and status surfaces
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P3  
 **Target band.** v0.30.x or later  
 **Breaking change.** May add API; may break if replacing enums  

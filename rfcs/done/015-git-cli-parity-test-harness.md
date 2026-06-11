@@ -1,6 +1,6 @@
 # RFC 015 — Git CLI parity test harness
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P2  
 **Target band.** v0.27.x+; selected parity tests may land earlier  
 **Breaking change.** No  

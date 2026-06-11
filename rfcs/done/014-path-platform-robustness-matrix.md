@@ -1,6 +1,6 @@
 # RFC 014 — Path and platform robustness matrix
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P2  
 **Target band.** v0.27.x+; selected tests may land earlier  
 **Breaking change.** No  

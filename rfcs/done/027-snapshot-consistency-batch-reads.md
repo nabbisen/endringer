@@ -1,6 +1,6 @@
 # RFC 027 — Snapshot consistency and batch read APIs
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P3  
 **Target band.** v0.30.x or later  
 **Breaking change.** Adds API; no change to existing no-cache model  

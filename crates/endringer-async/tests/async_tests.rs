@@ -481,3 +481,45 @@ async fn async_rich_worktree_status_matches_sync() {
     assert_eq!(sync_status.entries.len(), async_status.entries.len(),
         "sync and async rich status should have same number of entries");
 }
+
+// ── RFC 027: async snapshot ───────────────────────────────────────────────── //
+
+#[tokio::test]
+async fn async_snapshot_default_no_panic() {
+    use endringer::SnapshotRequest;
+    let f = Fixture::new();
+    let repo = endringer_async::AsyncRepository::open(f.path()).await.unwrap();
+    let snap = repo.snapshot(SnapshotRequest::default()).await.unwrap();
+    assert!(!snap.info.repo_name.is_empty(), "repo info should be populated");
+}
+
+// ── RFC 028: async diff_entries ───────────────────────────────────────────── //
+
+#[tokio::test]
+async fn async_diff_entries_matches_sync() {
+    use endringer::{DiffOptions, repository::repository};
+    let f = Fixture::new();
+
+    // Async fixture has only 1 commit — add one more.
+    std::fs::write(f.path().join("extra.txt"), "x").unwrap();
+    std::process::Command::new("git")
+        .args(["add", "."]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .status().unwrap();
+    std::process::Command::new("git")
+        .args(["commit","-m","second"]).current_dir(f.path())
+        .env("GIT_CONFIG_NOSYSTEM","1").env("GIT_CONFIG_GLOBAL","/dev/null")
+        .env("GIT_EDITOR","true").env("GIT_TERMINAL_PROMPT","0")
+        .stdin(std::process::Stdio::null()).status().unwrap();
+
+    let commits = repository(f.path()).unwrap().list_commits().unwrap();
+    let parent = commits[1].commit_id.clone();
+    let head   = commits[0].commit_id.clone();
+
+    let sync_entries = repository(f.path()).unwrap()
+        .diff_entries(&parent, &head, DiffOptions::default()).unwrap();
+    let async_entries = endringer_async::AsyncRepository::open(f.path()).await.unwrap()
+        .diff_entries(parent, head, DiffOptions::default()).await.unwrap();
+    assert_eq!(sync_entries.len(), async_entries.len(),
+        "async and sync diff_entries should return same count");
+}

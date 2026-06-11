@@ -1,6 +1,6 @@
 # RFC 017 — Performance benchmarking and large-repository profiling
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P2  
 **Target band.** v0.28.x  
 **Breaking change.** No  

@@ -1,6 +1,6 @@
 # RFC 026 — Custom backend conformance kit
 
-**Status.** Proposed  
+**Status.** Implemented (v0.32.0)  
 **Priority.** P3  
 **Target band.** v0.30.x  
 **Breaking change.** No  

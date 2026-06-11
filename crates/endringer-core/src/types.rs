@@ -818,3 +818,107 @@ impl Default for StatusOptions {
         }
     }
 }
+
+// ── Snapshot batch read (RFC 027) ────────────────────────────────────────── //
+
+/// Selects which data to include in a [`RepositorySnapshot`].
+///
+/// Setting a field to `false` skips that read; the corresponding field in
+/// `RepositorySnapshot` will be `None`.
+#[derive(Clone, Debug)]
+pub struct SnapshotRequest {
+    /// Include `status_digest`. Default: true.
+    pub include_status_digest: bool,
+    /// Include `operation_state`. Default: true.
+    pub include_operation_state: bool,
+    /// Include `local_branches`. Default: false.
+    pub include_local_branches: bool,
+    /// Include `tags`. Default: false.
+    pub include_tags: bool,
+}
+
+impl Default for SnapshotRequest {
+    fn default() -> Self {
+        SnapshotRequest {
+            include_status_digest:  true,
+            include_operation_state: true,
+            include_local_branches: false,
+            include_tags: false,
+        }
+    }
+}
+
+/// A batch of related reads collected in one method call.
+///
+/// Reduces inter-call drift for related UI data. Not an atomic snapshot —
+/// concurrent repository mutation can still produce a mixed view, but this
+/// is unusual in practice for a single call.
+///
+/// Returned by [`crate::backend::VcsBackend::snapshot`].
+#[derive(Clone, Debug)]
+pub struct RepositorySnapshot {
+    /// Repository info is always included.
+    pub info: RepositoryInfo,
+    /// Status digest, if requested.
+    pub status_digest: Option<StatusDigest>,
+    /// In-progress operation state, if requested.
+    pub operation_state: Option<OperationState>,
+    /// Local branches, if requested.
+    pub local_branches: Option<Vec<BranchInfo>>,
+    /// Tags (unsorted), if requested.
+    pub tags: Option<Vec<TagInfo>>,
+}
+
+// ── Rename/copy detection (RFC 028) ──────────────────────────────────────── //
+
+/// A richer change kind that includes rename and copy information.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DiffChangeKind {
+    Added,
+    Modified,
+    Deleted,
+    /// File was renamed. `old_path` in [`DiffEntry`] is the former path.
+    Renamed,
+    /// File was copied. `old_path` in [`DiffEntry`] is the source path.
+    Copied,
+    TypeChanged,
+    ModeChanged,
+}
+
+/// A single entry in a rename/copy-aware diff.
+///
+/// Returned by [`crate::backend::VcsBackend::diff_entries`].
+/// The simpler [`crate::backend::VcsBackend::diff`] is preserved.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DiffEntry {
+    /// Current (new) path, or `None` for pure deletions.
+    pub new_path: Option<std::path::PathBuf>,
+    /// Former path for renames/copies; source path for copies.
+    pub old_path: Option<std::path::PathBuf>,
+    /// How the file changed.
+    pub kind: DiffChangeKind,
+    /// Rename/copy similarity score (0–100), if detection was performed.
+    pub similarity: Option<u8>,
+}
+
+/// Options for a rename/copy-aware diff.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DiffOptions {
+    /// Detect renames (default: false — opt-in because it can be expensive).
+    pub detect_renames: bool,
+    /// Detect copies (default: false — more expensive than rename detection).
+    pub detect_copies: bool,
+    /// Minimum similarity threshold for rename/copy detection (0–100).
+    /// `None` uses the backend default (typically 50).
+    pub rename_threshold: Option<u8>,
+}
+
+impl Default for DiffOptions {
+    fn default() -> Self {
+        DiffOptions {
+            detect_renames: false,
+            detect_copies: false,
+            rename_threshold: None,
+        }
+    }
+}

@@ -6,9 +6,10 @@ use endringer_core::error::{anyhow_to_backend, Error as CrateError, NotFoundKind
 use endringer_core::backend::VcsBackend;
 use endringer_core::types::{
     AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
-    CommitQuery, CommitQueryResult, ConflictSummary, DiffSummary, OperationState,
-    RefInfo, RefKind, RemoteInfo, RepositoryInfo, RichWorktreeStatus, SortOrder,
-    StashDetail, StashEntry, StatusDigest, StatusOptions, SubmoduleInfo,
+    CommitQuery, CommitQueryResult, ConflictSummary, DiffEntry, DiffOptions,
+    DiffSummary, OperationState, RefInfo, RefKind, RemoteInfo,
+    RepositoryInfo, RichWorktreeStatus,
+    SortOrder, StashDetail, StashEntry, StatusDigest, StatusOptions, SubmoduleInfo,
     SubmoduleSummary, TagInfo, TreeEntry,
     WorktreeDetail, WorktreeInfo, WorktreeStatus,
 };
@@ -118,6 +119,10 @@ impl VcsBackend for GitBackend {
 
     fn diff(&self, from: &CommitId, to: &CommitId) -> Result<DiffSummary> {
         be!(diff::diff(&repo!(self), from, to))
+    }
+
+    fn diff_entries(&self, from: &CommitId, to: &CommitId, options: DiffOptions) -> Result<Vec<DiffEntry>> {
+        be!(diff::diff_entries(&repo!(self), from, to, options))
     }
 
     fn remote_url(&self, name: &str) -> Result<Option<String>> {

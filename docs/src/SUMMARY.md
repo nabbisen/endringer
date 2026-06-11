@@ -33,6 +33,10 @@
 - [Stabilisation dashboard](development/stabilization-dashboard.md)
 - [Dependency and feature policy](development/dependency-policy.md)
 - [Async API semantics](development/async-semantics.md)
+- [Platform and path matrix](development/platform-matrix.md)
+- [Git CLI parity tests](development/git-cli-parity.md)
+- [Performance and benchmarks](development/performance.md)
+- [Backend conformance](development/backend-conformance.md)
 
 - [Security posture](security.md)
 

@@ -18,4 +18,9 @@ endringer-jj   = { workspace = true }
 anyhow         = { workspace = true }
 
 [dev-dependencies]
-tempfile = { workspace = true }
+tempfile  = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name    = "repository_reads"
+harness = false

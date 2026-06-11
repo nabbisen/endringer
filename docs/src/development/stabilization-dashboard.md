@@ -15,9 +15,9 @@ v1.0 is **not planned**.
 | `VcsBackend` extension stance | ✅ Done | RFC 003 | Default-impl policy documented; trait not yet stable pre-v1 |
 | Typed error model | ✅ Done | RFC 006 | `endringer::Error` enum; all public methods return `Result<T>` |
 | jj support verified | ✅ Done | RFC 007 | `JjFixture`; git-store-view stance; support boundary documented |
-| Path/platform robustness matrix | 🔲 Open | RFC 014 | Not started |
-| Git CLI parity harness | 🔲 Open | RFC 015 | Not started |
-| Performance baseline | 🔲 Open | RFC 017 | Not started |
+| Path/platform robustness matrix | ✅ Done | RFC 014 | `git_platform.rs`; platform-matrix.md; 8 tests |
+| Git CLI parity harness | ✅ Done | RFC 015 | `git_cli.rs`, `git_cli_parity.rs`; 6 parity tests; known-deviations.md |
+| Performance baseline | ✅ Done | RFC 017 | Criterion benchmarks; performance.md; classification table |
 | No stale docs contradictions | 🔲 Open | — | Ongoing; known gaps tracked in ROADMAP |
 | Maintainer v1 approval | 🔲 Open | — | Explicit gate; not triggered by code alone |
 
@@ -53,4 +53,4 @@ See `rfcs/proposed/` for the full list (012–029).
 
 ---
 
-*Last updated: v0.31.0*
+*Last updated: v0.32.0*
