@@ -108,6 +108,7 @@ crates/endringer/
       git_cli.rs                  git CLI parity helpers
       jj_fixture.rs               JjFixture helper for jj integration tests
     git_blame.rs                  per-line blame
+    git_branch_tracking.rs        branch tracking, upstream, ahead/behind
     git_branches.rs               branch listing, tracking, ahead/behind
     git_cli_parity.rs             git CLI parity tests (RFC 015)
     git_commits.rs                commit history, graph helpers

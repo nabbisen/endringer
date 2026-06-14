@@ -6,7 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.33.2] — 2026-06-11
+## [0.33.3] — 2026-06-11
+
+Documentation fixes found during a structured four-dimension audit
+(RFC fulfillment, test/requirements match, code/test match, docs/code match).
+No code changes. All 317 tests continue to pass.
+
+### Fixed
+
+- **`docs/src/reference/types.md`**: four public types were re-exported and
+  used throughout the library but had no documentation entry:
+  - `StashEntry` — stash list entry (`index`, `commit_id`, `message`)
+  - `SubmoduleInfo` — simple submodule record (`name`, `path`, `url`)
+  - `WorktreeInfo` — linked worktree concise record (`id`, `path`,
+    `current_branch`, `is_locked`)
+  - `SnapshotRequest` — input struct for `snapshot()` (`include_*` flags,
+    `Default` impl)
+
+- **`docs/src/development/architecture.md`**: `git_branch_tracking.rs` was
+  present in the test suite but absent from the test-structure table.
+
+---
 
 Bug fix: the Jujutsu backend now exposes read methods it was silently
 rejecting.

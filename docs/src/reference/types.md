@@ -352,7 +352,52 @@ pub struct WorktreeDetail {
 }
 ```
 
+## Repository metadata
+
+### `SubmoduleInfo`
+
+```rust
+pub struct SubmoduleInfo {
+    pub name: String,
+    pub path: PathBuf,
+    pub url:  Option<String>,
+}
+```
+
+### `StashEntry`
+
+```rust
+pub struct StashEntry {
+    pub index:     usize,      // 0 = newest (stash@{0})
+    pub commit_id: CommitId,
+    pub message:   String,
+}
+```
+
+### `WorktreeInfo`
+
+```rust
+pub struct WorktreeInfo {
+    pub id:             String,
+    pub path:           PathBuf,
+    pub current_branch: String,   // "(detached)" for detached HEAD
+    pub is_locked:      bool,
+}
+```
+
 ## Snapshot
+
+### `SnapshotRequest`
+
+```rust
+pub struct SnapshotRequest {
+    pub include_status_digest:   bool,   // default: true
+    pub include_operation_state: bool,   // default: true
+    pub include_local_branches:  bool,   // default: false
+    pub include_tags:            bool,   // default: false
+}
+// SnapshotRequest::default() — status + operation state only
+```
 
 ### `RepositorySnapshot`
 

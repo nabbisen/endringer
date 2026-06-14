@@ -9,7 +9,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version      = "0.33.2"
+version      = "0.33.3"
 
 edition      = "2024"
 authors      = ["nabbisen"]
@@ -18,10 +18,10 @@ repository   = "https://github.com/nabbisen/endringer"
 rust-version = "1.85.0"
 
 [workspace.dependencies]
-endringer-core  = { path = "crates/endringer-core",  version = "0.33.2" }
-endringer-git   = { path = "crates/endringer-git",   version = "0.33.2" }
-endringer-jj    = { path = "crates/endringer-jj",    version = "0.33.2" }
-endringer       = { path = "crates/endringer",       version = "0.33.2" }
+endringer-core  = { path = "crates/endringer-core",  version = "0.33.3" }
+endringer-git   = { path = "crates/endringer-git",   version = "0.33.3" }
+endringer-jj    = { path = "crates/endringer-jj",    version = "0.33.3" }
+endringer       = { path = "crates/endringer",       version = "0.33.3" }
 anyhow          = "1"
 criterion       = { version = "0.5", features = ["html_reports"] }
 gix             = { version = "0.84", features = ["blame", "attributes"] }
