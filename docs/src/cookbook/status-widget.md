@@ -42,10 +42,13 @@ fn refresh(path: &Path) -> anyhow::Result<()> {
 ## Cost notes
 
 - `status_digest()` — cheap: one HEAD resolution.
-- `is_dirty()` — two-pass heuristic (mtime + content hash fallback). Fast on
-  most repos; can be slow on very large working trees.
-- `worktree_status()` — iterates the full index. Avoid calling on every
-  keypress; call on a throttled timer or file-watcher event.
+- `is_dirty()` / `worktree_status()` — every tracked file's content is
+  compared against the index (in its git form — `core.autocrlf`,
+  `.gitattributes`, as `git add` would see it), on every call; a stat match
+  is never a shortcut — it isn't a reliable one (since 0.33.4; see
+  `docs/src/development/performance.md`). Fast on most repos; can be slow on
+  very large working trees. Avoid calling on every keypress; call on a
+  throttled timer or file-watcher event.
 - `operation_state()` — reads marker files only; always cheap.
 
 ## Boundary note

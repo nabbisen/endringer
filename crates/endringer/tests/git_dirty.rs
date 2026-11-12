@@ -39,3 +39,33 @@ fn new_staged_file_is_dirty() {
     assert!(repository(f.path()).unwrap().is_dirty().unwrap(),
         "staged new file should be detected as dirty");
 }
+
+// ── is_dirty: a stat mismatch is not a verdict ──────────────────────────── //
+
+/// `touch`ing a tracked file (mtime only, content untouched) must not read
+/// as dirty — the single-file analogue of
+/// `copied_repository_with_rewritten_mtimes_is_clean` (`git_status.rs`).
+#[test]
+fn touched_tracked_file_is_not_dirty() {
+    let f = Fixture::new();
+    let later = f.mtime_secs("README.md") + 3600;
+    f.set_mtime("README.md", later);
+    assert!(!repository(f.path()).unwrap().is_dirty().unwrap(),
+        "a touched, content-identical file should not be dirty");
+}
+
+/// A regression guard for the content-hash fallback this project already
+/// had working: a same-size edit, with the file's mtime pinned back to
+/// exactly what the index cached (simulating an edit that lands in the
+/// same clock second the index already recorded — not left to wall-clock
+/// timing luck). Stat alone says clean; content does not, and must still
+/// win.
+#[test]
+fn same_size_same_second_edit_is_still_dirty() {
+    let f = Fixture::new();
+    let cached = f.mtime_secs("README.md");
+    std::fs::write(f.path.join("README.md"), "# fixturd\n").unwrap(); // same length as "# fixture\n"
+    f.set_mtime("README.md", cached);
+    assert!(repository(f.path()).unwrap().is_dirty().unwrap(),
+        "a same-size, same-cached-mtime edit must still be detected as dirty");
+}

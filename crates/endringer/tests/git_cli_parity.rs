@@ -183,3 +183,69 @@ fn parity_blame_line_count() {
         "blame line count should match git blame --porcelain; \
          git={git_line_count}, endo={endo_line_count}");
 }
+
+// ── 7. worktree_status on a copied repository ─────────────────────────── //
+
+/// Order matters here: `git status` itself refreshes the index's cached
+/// stat data as a side effect, which would silently fix the very bug this
+/// test exists to catch. `worktree_status` is called **first**, while the
+/// index still holds its original, now-stale stat entries; `git status`
+/// runs second, as a sanity check that it agrees clean files are clean —
+/// not as the reference endringer is compared against here.
+#[test]
+fn parity_worktree_status_on_copied_repository() {
+    let f = Fixture::new();
+    let later = f.mtime_secs("README.md") + 3600;
+    f.set_mtime("README.md", later);
+    f.set_mtime("src.rs", later);
+
+    let repo = repository(f.path()).unwrap();
+    let status = repo.worktree_status().unwrap();
+    assert!(
+        status.staged.is_empty() && status.unstaged.is_empty(),
+        "endringer must read this as clean, with the index not yet refreshed; \
+         staged={:?} unstaged={:?}", status.staged, status.unstaged
+    );
+
+    let git_lines = git_cli::git_status_short(f.path());
+    assert!(
+        git_lines.is_empty(),
+        "git status --porcelain should also report clean: {git_lines:?}"
+    );
+}
+
+// ── 8. worktree_status with a symlink and a submodule ─────────────────── //
+
+/// Same ordering rule as the copied-repository parity test above: endringer
+/// first, `git status` second, as a sanity check only.
+#[cfg(unix)]
+#[test]
+fn parity_worktree_status_with_symlink_and_submodule() {
+    let f = Fixture::new();
+    std::fs::write(f.path.join("target.txt"), "data").unwrap();
+    std::os::unix::fs::symlink("target.txt", f.path.join("link.txt")).unwrap();
+    f.git(&["add", "."]);
+    f.git(&["commit", "-m", "add symlink"]);
+
+    let source = Fixture::new();
+    f.git(&[
+        "-c", "protocol.file.allow=always",
+        "submodule", "add", source.path().to_str().unwrap(), "lib",
+    ]);
+    f.git(&["commit", "-m", "add submodule"]);
+
+    let repo = repository(f.path()).unwrap();
+    let status = repo.worktree_status().unwrap();
+    assert!(
+        status.staged.is_empty() && status.unstaged.is_empty() && status.untracked.is_empty(),
+        "endringer must read this as clean, symlink and submodule included; \
+         staged={:?} unstaged={:?} untracked={:?}",
+        status.staged, status.unstaged, status.untracked
+    );
+
+    let git_lines = git_cli::git_status_short(f.path());
+    assert!(
+        git_lines.is_empty(),
+        "git status --porcelain should also report clean: {git_lines:?}"
+    );
+}

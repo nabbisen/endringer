@@ -6,7 +6,7 @@
 use std::path::Path;
 use std::process::Command;
 use endringer::repository::repository;
-use endringer::TreeEntryKind;
+use endringer::{ChangeKind, TreeEntryKind};
 
 fn git(dir: &Path, args: &[&str]) {
     assert!(Command::new("git").args(args).current_dir(dir)
@@ -159,6 +159,82 @@ fn symlink_reported_as_symlink_kind() {
     assert!(link.is_some(), "symlink should appear in tree");
     assert_eq!(link.unwrap().kind, TreeEntryKind::Symlink,
         "symlink should be reported as Symlink kind");
+}
+
+// ── Symlinks are not read as their target file ──────────────────────────── //
+
+#[test]
+#[cfg(unix)]
+fn clean_repository_with_symlink_reads_clean() {
+    let dir = tempfile::TempDir::new().unwrap();
+    make_repo(dir.path());
+    std::fs::write(dir.path().join("target.txt"), "data").unwrap();
+    std::os::unix::fs::symlink("target.txt", dir.path().join("link.txt")).unwrap();
+    commit_all(dir.path(), "add symlink");
+
+    let ws = repository(dir.path()).unwrap().worktree_status().unwrap();
+    assert!(ws.unstaged.is_empty(), "unexpected unstaged: {:?}", ws.unstaged);
+}
+
+/// A dangling link — the metadata call for the link itself still succeeds;
+/// only its target is missing. Unchanged since commit, so still clean: not
+/// "Deleted" (which `metadata`, following the link into nothing, would
+/// have reported).
+#[test]
+#[cfg(unix)]
+fn dangling_symlink_unchanged_reads_clean() {
+    let dir = tempfile::TempDir::new().unwrap();
+    make_repo(dir.path());
+    std::os::unix::fs::symlink("does-not-exist.txt", dir.path().join("link.txt")).unwrap();
+    commit_all(dir.path(), "add dangling symlink");
+
+    let ws = repository(dir.path()).unwrap().worktree_status().unwrap();
+    assert!(ws.unstaged.is_empty(), "a dangling-but-unchanged symlink must read clean: {:?}", ws.unstaged);
+}
+
+#[test]
+#[cfg(unix)]
+fn retargeted_symlink_reads_modified() {
+    let dir = tempfile::TempDir::new().unwrap();
+    make_repo(dir.path());
+    std::fs::write(dir.path().join("a.txt"), "a").unwrap();
+    std::fs::write(dir.path().join("b.txt"), "b").unwrap();
+    std::os::unix::fs::symlink("a.txt", dir.path().join("link.txt")).unwrap();
+    commit_all(dir.path(), "add symlink to a.txt");
+
+    std::fs::remove_file(dir.path().join("link.txt")).unwrap();
+    std::os::unix::fs::symlink("b.txt", dir.path().join("link.txt")).unwrap();
+
+    let ws = repository(dir.path()).unwrap().worktree_status().unwrap();
+    assert!(
+        ws.unstaged.iter().any(|e| e.kind == ChangeKind::Modified && e.path.ends_with("link.txt")),
+        "a retargeted symlink must read Modified: {:?}", ws.unstaged
+    );
+}
+
+// ── A Unix symlink target is not a Windows path ─────────────────────────── //
+
+/// A backslash is an ordinary character in a Unix symlink target, not a
+/// separator — a plain `to_string_lossy().replace('\\', "/")` would rewrite
+/// it into a forward slash before hashing, so a target that legitimately
+/// contains one would never compare equal to what git itself stored,
+/// reading a clean link as `Modified`.
+#[test]
+#[cfg(unix)]
+fn symlink_target_with_backslash_reads_clean() {
+    let dir = tempfile::TempDir::new().unwrap();
+    make_repo(dir.path());
+    let target = "weird\\name.txt";
+    std::fs::write(dir.path().join(target), "data").unwrap();
+    std::os::unix::fs::symlink(target, dir.path().join("link.txt")).unwrap();
+    commit_all(dir.path(), "add symlink with backslash in target");
+
+    let ws = repository(dir.path()).unwrap().worktree_status().unwrap();
+    assert!(
+        ws.unstaged.is_empty(),
+        "a clean symlink whose target contains a literal backslash must still read clean: {:?}",
+        ws.unstaged
+    );
 }
 
 // ── Executable bit (Unix only) ────────────────────────────────────────────── //

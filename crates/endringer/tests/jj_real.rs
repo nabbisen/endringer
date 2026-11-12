@@ -287,3 +287,40 @@ fn jj_real_operation_state_remains_unsupported() {
     assert!(!info.capabilities.conflict_state,
         "jj should declare conflict_state unsupported");
 }
+
+// ── a stat mismatch is not a verdict (delegated from GitBackend) ───────── //
+
+/// `JjBackend::is_dirty` delegates entirely to `GitBackend`'s own (now
+/// fixed) status read on a colocated repository's `.git` store. A copied
+/// repository (mtime rewritten, content untouched) must read clean here
+/// exactly as it does for a plain git repository
+/// (`git_dirty::touched_tracked_file_is_not_dirty`).
+#[test]
+fn jj_real_colocated_copied_repository_is_not_dirty() {
+    if !require_jj() { return; }
+    let f = JjFixture::colocated();
+
+    let readme = f.path.join("README.md");
+    let meta = std::fs::metadata(&readme).expect("metadata");
+    let cached_secs = meta
+        .modified()
+        .expect("mtime")
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("mtime after epoch")
+        .as_secs() as i64;
+    let later = cached_secs + 3600;
+    let ok = std::process::Command::new("touch")
+        .arg("-d")
+        .arg(format!("@{later}"))
+        .arg(&readme)
+        .status()
+        .expect("touch")
+        .success();
+    assert!(ok, "touch -d failed for README.md");
+
+    let repo = jj_repository(f.path()).expect("open colocated repo");
+    assert!(
+        !repo.is_dirty().expect("is_dirty"),
+        "a touched, content-identical file should not be dirty on the jj backend either"
+    );
+}

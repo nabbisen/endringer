@@ -76,4 +76,31 @@ impl Fixture {
             .success();
         assert!(ok, "git {} failed", args.join(" "));
     }
+
+    /// Sets `rel_path`'s on-disk mtime to exactly `epoch_secs`, leaving its
+    /// content untouched. Simulates what `cp -r`/`touch` does to a file's
+    /// timestamp without changing a byte of it — the scenario a stat-only
+    /// dirty check must not be fooled by.
+    pub fn set_mtime(&self, rel_path: &str, epoch_secs: i64) {
+        let ok = Command::new("touch")
+            .arg("-d")
+            .arg(format!("@{epoch_secs}"))
+            .arg(self.path.join(rel_path))
+            .status()
+            .expect("touch")
+            .success();
+        assert!(ok, "touch -d failed for {rel_path}");
+    }
+
+    /// Returns `rel_path`'s current mtime, in whole seconds since the Unix
+    /// epoch — the same granularity git's own index stat cache uses.
+    pub fn mtime_secs(&self, rel_path: &str) -> i64 {
+        std::fs::metadata(self.path.join(rel_path))
+            .expect("metadata")
+            .modified()
+            .expect("mtime")
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("mtime after epoch")
+            .as_secs() as i64
+    }
 }

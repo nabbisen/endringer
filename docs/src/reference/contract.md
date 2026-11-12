@@ -17,6 +17,41 @@ Tests that enforce these contracts are listed alongside each entry.
 - Bare repositories return an empty `WorktreeStatus` with no staged, unstaged,
   or untracked entries.
 - `is_dirty()` returns `false` for bare repositories.
+- A tracked file whose on-disk timestamp or size differs from the index's
+  cached stat, but whose **content** (converted to its git form — through
+  the repository's own filter pipeline: `core.autocrlf`, `.gitattributes`
+  `eol`/`text`, clean filters) matches the index entry's blob, is reported
+  clean, not `Modified` (since 0.33.4). A stat mismatch is never, by itself, a
+  verdict. Tests: `crates/endringer/tests/git_status.rs`'s
+  `copied_repository_with_rewritten_mtimes_is_clean`,
+  `autocrlf_checkout_is_clean`, `gitattributes_eol_crlf_checkout_is_clean`;
+  `git_dirty.rs`'s `touched_tracked_file_is_not_dirty`.
+- A symbolic link (index mode `120000`) is compared by its **target path**
+  (`read_link`), never by following it into the target file's own content —
+  a dangling link (the target does not exist) is clean if unchanged, not
+  `Deleted`. On Unix the target's raw bytes are compared with no string
+  conversion; on Windows the separator is normalised (`\` -> `/`), which is
+  what git itself does on checkout (since 0.33.4). Tests:
+  `git_platform.rs`'s `clean_repository_with_symlink_reads_clean`,
+  `dangling_symlink_unchanged_reads_clean`, `retargeted_symlink_reads_modified`,
+  `symlink_target_with_backslash_reads_clean`.
+- A submodule (a gitlink, index mode `160000`) is never read as a file. An
+  uninitialized submodule (no `.git` inside its path) is clean. An
+  initialized one is opened at its own path (never discovered by searching
+  upward — a broken `.git` inside it is never silently resolved against an
+  ancestor repository); it is `Modified` when its checked-out HEAD differs
+  from the gitlink's recorded commit, when its own `worktree_status` is not
+  clean, or when anything about it cannot be read at all — opening its
+  repository, reading or peeling its HEAD (an unborn HEAD included), or
+  computing its own status (since 0.33.4) — never silently clean.
+  Its own files never appear in the parent's `untracked` list.
+  `submodule.<name>.ignore`/`diff.ignoreSubmodules` are not honoured — see
+  `tests/parity/KNOWN-DEVIATIONS.md`. Tests: `git_submodule_stash.rs`'s
+  `clean_repository_with_initialized_submodule_reads_clean_and_nothing_untracked`,
+  `submodule_head_moved_reads_modified`, `file_edited_inside_submodule_reads_modified`,
+  `uninitialized_submodule_reads_clean`,
+  `broken_submodule_gitfile_reads_modified_not_compared_with_superproject`,
+  `submodule_with_unborn_head_reads_modified`.
 
 **Enforcing tests:** `crates/endringer/tests/git_status.rs`
 

@@ -82,6 +82,89 @@ fn untracked_file_reported() {
     );
 }
 
+// ── worktree_status: a stat mismatch is not a verdict ───────────────────── //
+
+/// A repository copied without preserving timestamps (`cp -r`'s own
+/// behaviour): every tracked file's mtime moves forward, content and size
+/// unchanged. `git status` reports this clean; `worktree_status` must too.
+#[test]
+fn copied_repository_with_rewritten_mtimes_is_clean() {
+    let f = Fixture::new();
+    let later = f.mtime_secs("README.md") + 3600;
+    f.set_mtime("README.md", later);
+    f.set_mtime("src.rs", later);
+
+    let status = repository(f.path()).unwrap().worktree_status().unwrap();
+    assert!(status.staged.is_empty(), "unexpected staged: {:?}", status.staged);
+    assert!(
+        status.unstaged.is_empty(),
+        "a copied, content-identical file must not read as modified; unstaged: {:?}",
+        status.unstaged
+    );
+}
+
+/// `core.autocrlf=true`: the blob stores LF, the working tree holds CRLF.
+/// `git status` reports this clean (it compares through the same
+/// conversion); `worktree_status` must too — the raw bytes differ, but the
+/// *git form* of the working tree file does not.
+#[test]
+fn autocrlf_checkout_is_clean() {
+    let f = Fixture::new();
+    f.git(&["config", "core.autocrlf", "true"]);
+    std::fs::remove_file(f.path.join("README.md")).unwrap();
+    f.git(&["checkout", "--", "README.md"]);
+
+    let status = repository(f.path()).unwrap().worktree_status().unwrap();
+    assert!(
+        status.unstaged.is_empty(),
+        "an autocrlf checkout must not read as modified; unstaged: {:?}",
+        status.unstaged
+    );
+}
+
+/// `.gitattributes` `*.txt eol=crlf`: the same conversion as `core.autocrlf`,
+/// scoped to one pattern instead of the whole repository.
+#[test]
+fn gitattributes_eol_crlf_checkout_is_clean() {
+    let f = Fixture::new();
+    std::fs::write(f.path.join(".gitattributes"), "*.txt eol=crlf\n").unwrap();
+    f.git(&["add", ".gitattributes"]);
+    f.git(&["commit", "-m", "add .gitattributes"]);
+    std::fs::write(f.path.join("notes.txt"), "line one\nline two\n").unwrap();
+    f.git(&["add", "notes.txt"]);
+    f.git(&["commit", "-m", "add notes.txt"]);
+
+    std::fs::remove_file(f.path.join("notes.txt")).unwrap();
+    f.git(&["checkout", "--", "notes.txt"]);
+
+    let status = repository(f.path()).unwrap().worktree_status().unwrap();
+    assert!(
+        status.unstaged.is_empty(),
+        "an eol=crlf checkout must not read as modified; unstaged: {:?}",
+        status.unstaged
+    );
+}
+
+/// A regression guard: rewriting a file's mtime must not make a *real*
+/// edit invisible. The fix removes the stat-mismatch shortcut entirely
+/// (every file is content-compared), so this should hold trivially — it
+/// is asserted directly so a future change that reintroduces a shortcut
+/// fails here first.
+#[test]
+fn real_edit_after_mtime_touch_is_still_modified() {
+    let f = Fixture::new();
+    let later = f.mtime_secs("README.md") + 3600;
+    f.set_mtime("README.md", later);
+    std::fs::write(f.path.join("README.md"), "# fixture\nactually edited\n").unwrap();
+
+    let status = repository(f.path()).unwrap().worktree_status().unwrap();
+    assert!(
+        status.unstaged.iter().any(|e| e.kind == ChangeKind::Modified
+            && e.path.ends_with("README.md")),
+        "a genuine edit must still be detected; unstaged: {:?}", status.unstaged
+    );
+}
+
 #[test]
 fn status_entries_are_sorted() {
     let f = Fixture::new();
