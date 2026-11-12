@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.33.4] — 2026-11-12
+
+### Fixed
+
+- `worktree_status()`, `rich_worktree_status()` and `is_dirty()` reported clean files as
+  modified: when a file's timestamp had changed but not its content (a copied or restored
+  repository, a `touch`), when the working tree is converted on checkout (`core.autocrlf`,
+  `.gitattributes` `eol`), for symbolic links, and for submodules, whose own files were also
+  listed as untracked. Every tracked file is now compared by its content in its git form; a
+  symbolic link by its target; a submodule by its checked-out commit and its own status. The
+  Jujutsu backend, which delegates to these, is fixed with them. No API change.
+
 ## [0.33.3] — 2026-06-11
 
 Documentation fixes found during a structured four-dimension audit

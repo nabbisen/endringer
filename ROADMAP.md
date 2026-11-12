@@ -79,6 +79,7 @@ cargo publish -p endringer-async
 | [v0.21.0] | 2026-06-10 | `VcsBackend` defaults (RFC 003), `ObjectId` foundation (RFC 031), ahead/behind (RFC 004). |
 | [v0.22.0] | 2026-06-10 | Branch tracking (RFC 005), repository info/capabilities (RFC 009), explicit branch sort order. |
 | [v0.23.0] | 2026-06-10 | Typed public error model (RFC 006); `remote_url` promoted to `Result<Option<String>>`. |
+| [v0.33.4] | 2026-11-12 | Bug fix: `worktree_status`/`is_dirty` no longer report clean files as modified (stat mismatch alone, `core.autocrlf`/`.gitattributes` conversion, symlinks, submodules). |
 
 ---
 
@@ -316,3 +317,4 @@ Readiness criteria:
 [v0.33.1]: https://github.com/nabbisen/endringer/releases/tag/v0.33.1
 [v0.33.2]: https://github.com/nabbisen/endringer/releases/tag/v0.33.2
 [v0.33.3]: https://github.com/nabbisen/endringer/releases/tag/v0.33.3
+[v0.33.4]: https://github.com/nabbisen/endringer/releases/tag/v0.33.4
