@@ -107,7 +107,14 @@ pub(crate) fn worktree_status(repo: &Repository) -> Result<WorktreeStatus> {
         return Ok(WorktreeStatus::default());
     }
 
-    let index = repo.open_index().context("open git index")?;
+    // A missing `.git/index` (a fresh `git init` before the first `git
+    // add`) is not a read failure — git itself treats it as an empty
+    // index, listing the working tree's files as untracked rather than
+    // refusing to read it at all. `index_or_empty()` is gix's own name
+    // for that same reading; `open_index()` (which errors instead) is
+    // kept for every other caller in this crate that genuinely needs the
+    // on-disk file to exist.
+    let index = repo.index_or_empty().context("open git index")?;
     let workdir = repo.workdir().expect("checked above");
 
     // ── Build HEAD blob map ─────────────────────────────────────────────── //

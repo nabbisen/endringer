@@ -265,3 +265,90 @@ fn gitignored_file_not_in_untracked() {
         "non-ignored untracked file should appear: {:?}", status.untracked
     );
 }
+
+// ── An unborn repository (no commits yet) has no .git/index ─────────────── //
+
+/// A fresh `git init`, before the first `git add`, has no `.git/index` file
+/// at all — confirmed directly against a real repository (`ls .git/index`:
+/// no such file). `git status` still works on this, reading the missing
+/// index as empty and listing every file as untracked. `worktree_status`
+/// must read it the same way, not refuse because the file isn't there yet.
+/// Built by hand, not through `Fixture::new()` — that fixture always
+/// commits, which would create the very index file this test needs absent.
+#[test]
+fn unborn_repository_with_one_untracked_file_has_no_index_error() {
+    let dir = tempfile::TempDir::new().expect("tempdir");
+    let path = dir.path();
+    let git = |args: &[&str]| {
+        let ok = std::process::Command::new("git")
+            .args(args)
+            .current_dir(path)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_EDITOR", "true")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdin(std::process::Stdio::null())
+            .status()
+            .expect("git")
+            .success();
+        assert!(ok, "git {} failed", args.join(" "));
+    };
+    git(&["init", "-b", "main"]);
+    std::fs::write(path.join("new.txt"), "hello\n").unwrap();
+    assert!(
+        !path.join(".git/index").exists(),
+        "fixture invariant: no git add has run yet, so no index file should exist"
+    );
+
+    let repo = repository(path).unwrap();
+    let status = repo.worktree_status().unwrap();
+
+    assert!(status.staged.is_empty(), "nothing is staged: {:?}", status.staged);
+    assert!(status.unstaged.is_empty(), "nothing is tracked yet: {:?}", status.unstaged);
+    assert!(
+        status.untracked.iter().any(|p| p.ends_with("new.txt")),
+        "the untracked file must still be listed: {:?}", status.untracked
+    );
+    assert!(!repo.is_dirty().unwrap(), "an untracked-only file is not dirty");
+}
+
+/// Parity with `git status --porcelain` on the same unborn-repository
+/// fixture — endringer's own read comes first (same ordering rule the
+/// copied-repository/symlink parity tests above use), `git` second, as a
+/// sanity check.
+#[test]
+fn parity_unborn_repository_with_one_untracked_file() {
+    #[path = "support/git_cli.rs"]
+    mod git_cli;
+
+    let dir = tempfile::TempDir::new().expect("tempdir");
+    let path = dir.path();
+    let git = |args: &[&str]| {
+        let ok = std::process::Command::new("git")
+            .args(args)
+            .current_dir(path)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_EDITOR", "true")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdin(std::process::Stdio::null())
+            .status()
+            .expect("git")
+            .success();
+        assert!(ok, "git {} failed", args.join(" "));
+    };
+    git(&["init", "-b", "main"]);
+    std::fs::write(path.join("new.txt"), "hello\n").unwrap();
+
+    let status = repository(path).unwrap().worktree_status().unwrap();
+    assert!(
+        status.untracked.iter().any(|p| p.ends_with("new.txt")),
+        "endringer must list the untracked file: {:?}", status.untracked
+    );
+
+    let git_lines = git_cli::git_status_short(path);
+    assert!(
+        git_lines.iter().any(|l| l.contains("new.txt")),
+        "git status --porcelain should also list it: {git_lines:?}"
+    );
+}

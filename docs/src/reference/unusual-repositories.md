@@ -22,8 +22,8 @@ for states that deviate from the default.
 | `query_commits()` | `Err` when start is `Head` (unborn) | `Ok` | `Ok` |
 | `local_branches()` | `Ok(vec![])` | `Ok` | `Ok` |
 | `list_tags()` | `Ok(vec![])` | `Ok` | `Ok` |
-| `worktree_status()` | `Ok` with empty lists | `Ok` | `Ok(empty)` or `Err` — no working tree |
-| `is_dirty()` | `Ok(false)` | `Ok` | `Ok(false)` |
+| `worktree_status()` | `Ok` with empty lists, or untracked files if any exist (since 0.33.5) | `Ok` | `Ok(empty)` or `Err` — no working tree |
+| `is_dirty()` | `Ok(false)` (since 0.33.5) | `Ok` | `Ok(false)` |
 | `references()` | `Ok` — only `HEAD` (Unborn) | `Ok` | `Ok` |
 | `remotes()` | `Ok(vec![])` | `Ok` | `Ok` |
 | `file_at_commit()` | `Err` (no commit specified) | `Ok` | `Ok` |
@@ -57,6 +57,10 @@ An unborn repository (`git init` with no commits) returns:
 - `Err` from `status_digest()`, `list_commits()` (when start is `Head`),
   and any method that requires a commit to be present
 - `repository_info().head = HeadState::Unborn { branch: Some("main") }`
+- `Ok` from `worktree_status()`/`is_dirty()`, reading `.git/index` as empty
+  when the file does not exist yet — true of a `git init` before the first
+  `git add`, not only of one with zero files (since 0.33.5; before, this
+  was `Err`, contradicting this page's own long-standing claim above).
 
 Callers that may encounter unborn repositories should check
 `repository_info().head` before calling commit-dependent methods.

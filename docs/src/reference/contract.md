@@ -17,6 +17,16 @@ Tests that enforce these contracts are listed alongside each entry.
 - Bare repositories return an empty `WorktreeStatus` with no staged, unstaged,
   or untracked entries.
 - `is_dirty()` returns `false` for bare repositories.
+- A repository whose `.git/index` file does not exist yet (a fresh `git init`
+  before the first `git add`) reads as an empty index, the same as `git
+  status` itself — every working-tree file is reported `untracked`, nothing
+  is `staged`/`unstaged`, and `is_dirty()` is `false` (since 0.33.5). Before
+  0.33.5 this was an `Err`, not the `Ok` this page's own
+  [unusual-repositories](unusual-repositories.md) table already documented
+  for the empty/unborn case — the code had not yet caught up to that claim.
+  Tests: `git_status.rs`'s
+  `unborn_repository_with_one_untracked_file_has_no_index_error` and
+  `parity_unborn_repository_with_one_untracked_file`.
 - A tracked file whose on-disk timestamp or size differs from the index's
   cached stat, but whose **content** (converted to its git form — through
   the repository's own filter pipeline: `core.autocrlf`, `.gitattributes`
