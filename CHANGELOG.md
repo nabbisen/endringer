@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.33.5] — 2026-11-21
+
+### Fixed
+
+- `worktree_status()` and `is_dirty()` returned `Err` when `.git/index` did not exist yet —
+  the state of a fresh `git init` before the first `git add`. git itself treats a missing index
+  as an empty one, listing the working tree's files as untracked; endringer now does the same,
+  rather than refusing to read a repository that has files but has never staged any of them. The
+  Jujutsu backend, which delegates to these, is fixed with them. No API change.
+
 ## [0.33.4] — 2026-11-12
 
 ### Fixed
