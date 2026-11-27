@@ -356,7 +356,7 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "endringer"
-version = "0.33.5"
+version = "0.34.0"
 dependencies = [
  "anyhow",
  "criterion",
@@ -368,7 +368,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-async"
-version = "0.33.5"
+version = "0.34.0"
 dependencies = [
  "anyhow",
  "endringer",
@@ -378,14 +378,14 @@ dependencies = [
 
 [[package]]
 name = "endringer-core"
-version = "0.33.5"
+version = "0.34.0"
 dependencies = [
  "anyhow",
 ]
 
 [[package]]
 name = "endringer-git"
-version = "0.33.5"
+version = "0.34.0"
 dependencies = [
  "anyhow",
  "endringer-core",
@@ -394,7 +394,7 @@ dependencies = [
 
 [[package]]
 name = "endringer-jj"
-version = "0.33.5"
+version = "0.34.0"
 dependencies = [
  "anyhow",
  "endringer-core",

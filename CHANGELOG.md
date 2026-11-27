@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.34.0] — 2026-11-28
+
+### Changed
+
+- **The minimum supported Rust version is now 1.95** (was 1.85), as gix 0.91 requires. This is a
+  breaking change for anyone building with an older toolchain.
+- `gix` updated to 0.91 (from 0.84). endringer's own public API does not change.
+
+### Security
+
+- `heapless` 0.8.0 is no longer a dependency. It came in through `gix-hash` and `faster-hex`,
+  which gix 0.91 no longer uses. The nine advisories against it, RUSTSEC-2026-0574 to
+  RUSTSEC-2026-0582 (a use-after-free among them), therefore no longer affect endringer or the
+  projects that depend on it.
+
 ## [0.33.5] — 2026-11-21
 
 ### Fixed

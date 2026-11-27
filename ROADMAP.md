@@ -81,6 +81,7 @@ cargo publish -p endringer-async
 | [v0.23.0] | 2026-06-10 | Typed public error model (RFC 006); `remote_url` promoted to `Result<Option<String>>`. |
 | [v0.33.4] | 2026-11-12 | Bug fix: `worktree_status`/`is_dirty` no longer report clean files as modified (stat mismatch alone, `core.autocrlf`/`.gitattributes` conversion, symlinks, submodules). |
 | [v0.33.5] | 2026-11-21 | Bug fix: a repository with no `.git/index` yet reads as empty, not unreadable. |
+| [v0.34.0] | 2026-11-28 | `gix` to 0.91, minimum Rust 1.95; `heapless` 0.8.0 and its nine advisories leave the dependency tree. |
 
 ---
 
@@ -320,3 +321,4 @@ Readiness criteria:
 [v0.33.3]: https://github.com/nabbisen/endringer/releases/tag/v0.33.3
 [v0.33.4]: https://github.com/nabbisen/endringer/releases/tag/v0.33.4
 [v0.33.5]: https://github.com/nabbisen/endringer/releases/tag/v0.33.5
+[v0.34.0]: https://github.com/nabbisen/endringer/releases/tag/v0.34.0
