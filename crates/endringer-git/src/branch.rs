@@ -90,10 +90,10 @@ fn collect_commits(
     Ok(history)
 }
 
-fn apply_commit_sort(commits: &mut Vec<CommitInfo>, order: SortOrder) {
+fn apply_commit_sort(commits: &mut [CommitInfo], order: SortOrder) {
     match order {
-        SortOrder::NewestFirst => commits.sort_by(|a, b| b.timestamp.cmp(&a.timestamp)),
-        SortOrder::OldestFirst => commits.sort_by(|a, b| a.timestamp.cmp(&b.timestamp)),
+        SortOrder::NewestFirst => commits.sort_by_key(|c| std::cmp::Reverse(c.timestamp)),
+        SortOrder::OldestFirst => commits.sort_by_key(|a| a.timestamp),
         SortOrder::ByName => commits.sort_by(|a, b| a.summary.cmp(&b.summary)),
     }
 }
@@ -146,8 +146,7 @@ pub(crate) fn branch_tracking(
     let upstream = graph::branch_upstream_ref(repository, branch)?;
     let upstream_gone = is_upstream_gone(repository, upstream.as_deref());
 
-    let ahead_behind = if upstream.is_some() && !upstream_gone {
-        let upstream_ref = upstream.as_ref().unwrap();
+    let ahead_behind = if let Some(upstream_ref) = upstream.as_ref().filter(|_| !upstream_gone) {
         match resolve_ref_commit(repository, upstream_ref) {
             Ok(upstream_tip) => {
                 Some(graph::ahead_behind(repository, &tip_commit_id, &upstream_tip)?)
@@ -181,17 +180,17 @@ pub(crate) fn local_branch_tracking(
         let upstream = graph::branch_upstream_ref(repository, &b.name)?;
         let upstream_gone = is_upstream_gone(repository, upstream.as_deref());
 
-        let ahead_behind: Option<AheadBehind> = if upstream.is_some() && !upstream_gone {
-            let upstream_ref = upstream.as_ref().unwrap();
-            match resolve_ref_commit(repository, upstream_ref) {
-                Ok(upstream_tip) => {
-                    Some(graph::ahead_behind(repository, &b.last_commit_id, &upstream_tip)?)
+        let ahead_behind: Option<AheadBehind> =
+            if let Some(upstream_ref) = upstream.as_ref().filter(|_| !upstream_gone) {
+                match resolve_ref_commit(repository, upstream_ref) {
+                    Ok(upstream_tip) => {
+                        Some(graph::ahead_behind(repository, &b.last_commit_id, &upstream_tip)?)
+                    }
+                    Err(_) => None,
                 }
-                Err(_) => None,
-            }
-        } else {
-            None
-        };
+            } else {
+                None
+            };
 
         result.push(BranchTrackingInfo {
             branch: b.name.clone(),
@@ -280,11 +279,10 @@ pub(crate) fn query_commits(
     let mut collected: Vec<CommitInfo> = Vec::new();
 
     for info in start_id.ancestors().all()? {
-        if let Some(lim) = limit {
-            if collected.len() >= lim {
+        if let Some(lim) = limit
+            && collected.len() >= lim {
                 break;
             }
-        }
         let info = info?;
         let commit = info.object()?;
         let message   = commit.message()?;
@@ -295,12 +293,10 @@ pub(crate) fn query_commits(
         let timestamp = seconds_to_systemtime(author_time.seconds);
 
         // Timestamp filters (applied to author timestamp).
-        if let Some(since) = query.since {
-            if timestamp < since { continue; }
-        }
-        if let Some(until) = query.until {
-            if timestamp > until { continue; }
-        }
+        if let Some(since) = query.since
+            && timestamp < since { continue; }
+        if let Some(until) = query.until
+            && timestamp > until { continue; }
 
         let parents: Vec<CommitId> = info
             .parent_ids.iter().copied().map(gix_id_to_commit_id).collect();

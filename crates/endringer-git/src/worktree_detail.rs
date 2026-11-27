@@ -96,11 +96,7 @@ fn read_worktree_path(admin_dir: &std::path::Path) -> Option<PathBuf> {
 fn read_head_branch(admin_dir: &std::path::Path) -> Option<String> {
     let content = std::fs::read_to_string(admin_dir.join("HEAD")).ok()?;
     let trimmed = content.trim();
-    if let Some(refname) = trimmed.strip_prefix("ref: refs/heads/") {
-        Some(refname.to_owned())
-    } else {
-        None // detached
-    }
+    trimmed.strip_prefix("ref: refs/heads/").map(|refname| refname.to_owned())
 }
 
 /// Read the HEAD commit OID from `.git/worktrees/<id>/HEAD`.

@@ -81,6 +81,13 @@ impl Fixture {
     /// content untouched. Simulates what `cp -r`/`touch` does to a file's
     /// timestamp without changing a byte of it — the scenario a stat-only
     /// dirty check must not be fooled by.
+    ///
+    /// Used by `git_status.rs`, `git_dirty.rs` and `git_cli_parity.rs` —
+    /// not every test file that includes this one via `#[path]` calls it,
+    /// so each of the others compiles its own, separate copy of this
+    /// module (per this file's own doc comment) where it genuinely is
+    /// unused. `#[allow(dead_code)]` for those; real callers exist above.
+    #[allow(dead_code)]
     pub fn set_mtime(&self, rel_path: &str, epoch_secs: i64) {
         let ok = Command::new("touch")
             .arg("-d")
@@ -94,6 +101,11 @@ impl Fixture {
 
     /// Returns `rel_path`'s current mtime, in whole seconds since the Unix
     /// epoch — the same granularity git's own index stat cache uses.
+    ///
+    /// Used by `git_status.rs`, `git_dirty.rs` and `git_cli_parity.rs` —
+    /// see `set_mtime`'s own doc comment just above for why the other
+    /// test files that include this module each see it as unused.
+    #[allow(dead_code)]
     pub fn mtime_secs(&self, rel_path: &str) -> i64 {
         std::fs::metadata(self.path.join(rel_path))
             .expect("metadata")

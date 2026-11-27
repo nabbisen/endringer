@@ -37,6 +37,12 @@ pub fn git_lines(repo: &Path, args: &[&str]) -> Vec<String> {
 }
 
 /// Returns (ahead, behind) counts via `git rev-list --left-right --count`.
+///
+/// Used by `git_cli_parity.rs` only — `git_status.rs`, the only other
+/// file that includes this module via `#[path]`, never calls it, so its
+/// own copy sees it as unused (same shape as `tests/support/fixture.rs`'s
+/// own doc comment explains).
+#[allow(dead_code)]
 pub fn git_ahead_behind(repo: &Path, local: &str, upstream: &str) -> (usize, usize) {
     let spec = format!("{}...{}", local, upstream);
     let line = git_output(repo, &["rev-list","--left-right","--count",&spec]);
@@ -47,6 +53,10 @@ pub fn git_ahead_behind(repo: &Path, local: &str, upstream: &str) -> (usize, usi
 }
 
 /// Returns the merge-base SHA between two refs.
+///
+/// Used by `git_cli_parity.rs` only — see `git_ahead_behind`'s own doc
+/// comment just above.
+#[allow(dead_code)]
 pub fn git_merge_base(repo: &Path, a: &str, b: &str) -> Option<String> {
     let out = Command::new("git")
         .args(["merge-base", a, b])
@@ -66,6 +76,10 @@ pub fn git_merge_base(repo: &Path, a: &str, b: &str) -> Option<String> {
 }
 
 /// Returns true when `git merge-base --is-ancestor a b` exits 0.
+///
+/// Used by `git_cli_parity.rs` only — see `git_ahead_behind`'s own doc
+/// comment above.
+#[allow(dead_code)]
 pub fn git_is_ancestor(repo: &Path, a: &str, b: &str) -> bool {
     Command::new("git")
         .args(["merge-base","--is-ancestor", a, b])
@@ -80,11 +94,19 @@ pub fn git_is_ancestor(repo: &Path, a: &str, b: &str) -> bool {
 }
 
 /// Returns tag names via `git for-each-ref --format=%(refname:short) refs/tags`.
+///
+/// Used by `git_cli_parity.rs` only — see `git_ahead_behind`'s own doc
+/// comment above.
+#[allow(dead_code)]
 pub fn git_tag_names(repo: &Path) -> Vec<String> {
     git_lines(repo, &["for-each-ref","--format=%(refname:short)","refs/tags"])
 }
 
 /// Returns local branch names via `git for-each-ref refs/heads`.
+///
+/// Used by `git_cli_parity.rs` only — see `git_ahead_behind`'s own doc
+/// comment above.
+#[allow(dead_code)]
 pub fn git_branch_names(repo: &Path) -> Vec<String> {
     git_lines(repo, &["for-each-ref","--format=%(refname:short)","refs/heads"])
 }

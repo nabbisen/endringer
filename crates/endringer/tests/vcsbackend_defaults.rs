@@ -9,7 +9,7 @@ use std::time::SystemTime;
 
 use endringer::{Error, NotFoundKind, Result, VcsBackend};
 use endringer::{
-    AheadBehind, BlameEntry, BranchInfo, BranchTrackingInfo, CommitId, CommitInfo,
+    AheadBehind, BlameEntry, BranchInfo, CommitId, CommitInfo,
     DiffSummary, RepositoryInfo, SortOrder, StatusDigest, WorktreeStatus,
 };
 

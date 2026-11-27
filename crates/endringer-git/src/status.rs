@@ -157,7 +157,7 @@ pub(crate) fn worktree_status(repo: &Repository) -> Result<WorktreeStatus> {
     // module's own doc comment for why a stat match is no longer a shortcut,
     // and `performance.md` for what this costs on a large working tree.
     let attrs = repo
-        .attributes_only(&*index, gix::worktree::stack::state::attributes::Source::WorktreeThenIdMapping)
+        .attributes_only(&index, gix::worktree::stack::state::attributes::Source::WorktreeThenIdMapping)
         .context("build attributes cache for the filter pipeline")?;
     let mut pipeline = gix::filter::Pipeline::new(repo, attrs.detach())
         .context("build filter pipeline")?;
@@ -201,7 +201,7 @@ pub(crate) fn worktree_status(repo: &Repository) -> Result<WorktreeStatus> {
             Err(_) => unstaged.push(make_entry(path_bytes, ChangeKind::Deleted)),
             Ok(_) => {
                 let disk_oid = git_form_blob_id(&mut pipeline, &abs, rela_path, &index);
-                if disk_oid.map_or(true, |oid| oid != entry.id) {
+                if disk_oid != Some(entry.id) {
                     unstaged.push(make_entry(path_bytes, ChangeKind::Modified));
                 }
             }
@@ -213,7 +213,7 @@ pub(crate) fn worktree_status(repo: &Repository) -> Result<WorktreeStatus> {
     let mut untracked = Vec::new();
     let mut exclude_stack = repo
         .excludes(
-            &*index,
+            &index,
             None,
             gix::worktree::stack::state::ignore::Source::WorktreeThenIdMappingIfNotSkipped,
         )
@@ -382,7 +382,7 @@ fn collect_untracked(
         let rel = abs.strip_prefix(workdir).unwrap_or(&abs);
 
         // Skip .git directory.
-        if rel.components().next().map_or(false, |c| c.as_os_str() == ".git") {
+        if rel.components().next().is_some_and(|c| c.as_os_str() == ".git") {
             continue;
         }
 
@@ -407,7 +407,7 @@ fn collect_untracked(
                 let ignored = exclude_stack
                     .as_mut()
                     .and_then(|stack| stack.at_path(rel, None).ok())
-                    .map_or(false, |platform| platform.is_excluded());
+                    .is_some_and(|platform| platform.is_excluded());
                 if !ignored {
                     result.push(rel.to_path_buf());
                 }

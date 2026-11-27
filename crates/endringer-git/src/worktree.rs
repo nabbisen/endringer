@@ -16,7 +16,7 @@ pub(crate) fn worktrees(repo: &Repository) -> Result<Vec<WorktreeInfo>> {
     let mut out = Vec::with_capacity(proxies.len());
 
     for proxy in proxies {
-        let id = proxy.id().to_str_lossy().into_owned();
+        let id = proxy.id()?.to_str_lossy().into_owned();
         let is_locked = proxy.is_locked();
 
         // The working directory path.

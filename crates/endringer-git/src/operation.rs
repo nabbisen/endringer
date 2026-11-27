@@ -57,13 +57,11 @@ pub(crate) fn operation_state(git_dir: &Path) -> Result<OperationState> {
 
     // 7. refs/bisect/ directory with any entries
     let bisect_dir = git_dir.join("refs").join("bisect");
-    if bisect_dir.is_dir() {
-        if let Ok(mut entries) = std::fs::read_dir(&bisect_dir) {
-            if entries.next().is_some() {
+    if bisect_dir.is_dir()
+        && let Ok(mut entries) = std::fs::read_dir(&bisect_dir)
+            && entries.next().is_some() {
                 return Ok(OperationState::Bisect);
             }
-        }
-    }
 
     Ok(OperationState::None)
 }

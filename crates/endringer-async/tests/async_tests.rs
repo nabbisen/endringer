@@ -274,7 +274,7 @@ async fn async_open_non_repo_returns_not_a_repository() {
 async fn async_error_is_typed_not_anyhow() {
     // Verify that the async API returns endringer::Error, not anyhow::Error,
     // by matching on a specific variant.
-    use endringer_async::Error;
+
     let dir = tempfile::TempDir::new().unwrap();
     let result = endringer_async::AsyncRepository::open(dir.path()).await;
     assert!(result.is_err());

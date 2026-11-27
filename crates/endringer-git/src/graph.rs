@@ -26,21 +26,9 @@ pub(crate) fn merge_base(
     let b_oid = parse_oid(b)?;
 
     match repo.merge_base(a_oid, b_oid) {
-        Ok(id) => Ok(Some(gix_id_to_commit_id(id.detach()))),
-        Err(e) => {
-            let msg = e.to_string();
-            // gix returns various forms depending on version:
-            // "not found", "NotFound", "Could not find a merge-base"
-            if msg.contains("not found")
-                || msg.contains("NotFound")
-                || msg.contains("Could not find")
-                || msg.contains("merge-base")
-            {
-                Ok(None)
-            } else {
-                Err(anyhow::anyhow!("merge_base failed: {e}"))
-            }
-        }
+        Ok(Some(id)) => Ok(Some(gix_id_to_commit_id(id.detach()))),
+        Ok(None) => Ok(None),
+        Err(e) => Err(anyhow::anyhow!("merge_base failed: {e}")),
     }
 }
 
@@ -186,7 +174,7 @@ fn commit_parent_ids(repo: &Repository, oid: gix::ObjectId) -> Result<Vec<gix::O
     let decoded = commit_obj.decode()?;
     decoded.parents.iter()
         .map(|p| {
-            gix::ObjectId::from_hex(&**p)
+            gix::ObjectId::from_hex(p)
                 .map_err(|e| anyhow::anyhow!("invalid parent id in commit {oid}: {e}"))
         })
         .collect()

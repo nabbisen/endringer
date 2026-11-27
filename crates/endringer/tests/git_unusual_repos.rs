@@ -280,7 +280,7 @@ fn bare_repository_query_commits_head_page() {
 fn query_commits_max_count_limits_results() {
     // Use the detached fixture which has ≥ 1 commit.
     let dir = detached_fixture();
-    let repo = repository(dir.path()).unwrap();
+    let _repo = repository(dir.path()).unwrap();
 
     // Seed more commits so we can test the limit meaningfully.
     for i in 0..5 {

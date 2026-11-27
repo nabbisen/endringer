@@ -57,9 +57,9 @@ fn repository_open_at_non_git_dir_returns_typed_error() {
 
 #[test]
 fn repository_open_at_nonexistent_path_returns_typed_error() {
-    match repository(std::path::Path::new("/no/such/path/at/all")) {
-        Ok(_) => panic!("expected error for nonexistent path"),
-        Err(_) => {} // any typed error is acceptable — the important thing is no panic
+    // any typed error is acceptable — the important thing is no panic
+    if repository(std::path::Path::new("/no/such/path/at/all")).is_ok() {
+        panic!("expected error for nonexistent path");
     }
 }
 
@@ -156,14 +156,52 @@ fn bare_repository_does_not_panic_on_reads() {
     let _ = repo.repository_info();
 }
 
-// ── No-external-command guarantee (compile-time audit) ───────────────────── //
+// ── No-external-command guarantee (a real grep audit, not a marker) ───────── //
 //
-// There is no runtime test for this; it is enforced by code review.
-// The test below documents the expectation and serves as a marker.
+// **Proves:** no `src/` file in any of the five workspace crates spawns an
+// external command (`std::process::Command`/`Command::new`) — endringer
+// talks to git exclusively through `gix`, never by shelling out to the
+// `git`/`jj` binaries. Previously only claimed in a comment ("enforced by
+// code review and grep audits") behind an `assert!(true, ...)` that could
+// never fail; this runs the grep audit for real, so a future `Command::new`
+// in library code fails this test instead of only a human's own review.
 #[test]
-fn external_command_guarantee_documented() {
-    // endringer library code (non-test) must never call std::process::Command
-    // or similar. This is enforced by code review and grep audits, not a
-    // runtime assertion. The test documents the invariant.
-    assert!(true, "runtime code must not spawn external commands");
+fn library_code_never_spawns_an_external_command() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..");
+    let mut offenders = Vec::new();
+    for crate_name in [
+        "endringer-core",
+        "endringer-git",
+        "endringer-jj",
+        "endringer",
+        "endringer-async",
+    ] {
+        let src_dir = workspace_root.join("crates").join(crate_name).join("src");
+        visit_rs_files(&src_dir, &mut |path| {
+            let text = std::fs::read_to_string(path).expect("read source file");
+            if text.contains("process::Command") || text.contains("Command::new") {
+                offenders.push(path.display().to_string());
+            }
+        });
+    }
+    assert!(
+        offenders.is_empty(),
+        "library (non-test) code must never spawn an external command directly: {offenders:?}"
+    );
+}
+
+fn visit_rs_files(dir: &std::path::Path, f: &mut impl FnMut(&std::path::Path)) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            visit_rs_files(&path, f);
+        } else if path.extension().is_some_and(|e| e == "rs") {
+            f(&path);
+        }
+    }
 }

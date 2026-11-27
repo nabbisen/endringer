@@ -133,6 +133,6 @@ fn repository_info_vcs_dir_exists() {
     let info = repo.repository_info().unwrap();
     assert!(info.vcs_dir.exists(),
         "vcs_dir {:?} should exist", info.vcs_dir);
-    assert!(info.vcs_dir.file_name().map_or(false, |n| n == ".git"),
+    assert!(info.vcs_dir.file_name().is_some_and(|n| n == ".git"),
         "vcs_dir should be .git for a standard repo");
 }

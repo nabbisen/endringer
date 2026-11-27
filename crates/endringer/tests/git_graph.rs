@@ -22,7 +22,7 @@ fn git_left_right_count(f: &Fixture, local: &str, upstream: &str) -> (usize, usi
         .output()
         .expect("git");
     let s = String::from_utf8(out.stdout).unwrap();
-    let parts: Vec<&str> = s.trim().split_whitespace().collect();
+    let parts: Vec<&str> = s.split_whitespace().collect();
     (parts[0].parse().unwrap(), parts[1].parse().unwrap())
 }
 

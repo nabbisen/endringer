@@ -902,7 +902,7 @@ pub struct DiffEntry {
 }
 
 /// Options for a rename/copy-aware diff.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DiffOptions {
     /// Detect renames (default: false — opt-in because it can be expensive).
     pub detect_renames: bool,
@@ -911,14 +911,4 @@ pub struct DiffOptions {
     /// Minimum similarity threshold for rename/copy detection (0–100).
     /// `None` uses the backend default (typically 50).
     pub rename_threshold: Option<u8>,
-}
-
-impl Default for DiffOptions {
-    fn default() -> Self {
-        DiffOptions {
-            detect_renames: false,
-            detect_copies: false,
-            rename_threshold: None,
-        }
-    }
 }

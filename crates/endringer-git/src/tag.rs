@@ -62,8 +62,8 @@ fn read_annotation(repository: &Repository, reference: &gix::Reference<'_>) -> O
 pub(crate) fn list_tags_sorted(repository: &Repository, order: SortOrder) -> Result<Vec<TagInfo>> {
     let mut tags = list_tags(repository)?;
     match order {
-        SortOrder::NewestFirst => tags.sort_by(|a, b| b.commit_timestamp.cmp(&a.commit_timestamp)),
-        SortOrder::OldestFirst => tags.sort_by(|a, b| a.commit_timestamp.cmp(&b.commit_timestamp)),
+        SortOrder::NewestFirst => tags.sort_by_key(|t| std::cmp::Reverse(t.commit_timestamp)),
+        SortOrder::OldestFirst => tags.sort_by_key(|a| a.commit_timestamp),
         SortOrder::ByName => tags.sort_by(|a, b| a.name.cmp(&b.name)),
     }
     Ok(tags)
@@ -104,7 +104,7 @@ pub(crate) fn create_annotated_tag(repository: &Repository, name: &str, message:
     repository
         .tag(
             name,
-            &head_id,
+            head_id,
             gix::object::Kind::Commit,
             Some(tagger),
             message,

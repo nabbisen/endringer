@@ -82,7 +82,7 @@ fn commit_id_from_hex_accepts_sha1_and_sha256() {
 
 #[test]
 fn object_format_sha256_repo_opens() {
-    use endringer::{repository, ObjectFormat};
+    use endringer::ObjectFormat;
 
     if !git_supports_sha256() {
         eprintln!("skip: git --object-format=sha256 not supported by installed git");

@@ -198,21 +198,36 @@ fn jj_real_colocated_has_both_dirs() {
 /// - change IDs, op log, working-copy commit are NOT surfaced.
 ///
 /// It compiles and runs regardless of jj availability (no JjFixture needed).
+/// **Proves:** `CommitInfo`'s field set is exactly these seven — no
+/// `change_id`, no `op_log`, nothing jj-native in the public surface.
+///
+/// Never called (there is no `CommitInfo` value to pass it); its only job
+/// is to type-check. An **exhaustive** destructuring pattern — one arm per
+/// real field, no `..` — is what does the actual proving: if `CommitInfo`
+/// ever gained a new field (`change_id`, say), this pattern would stop
+/// compiling with "pattern does not mention field `change_id`" (E0027),
+/// failing the build until someone consciously adds it here, exactly the
+/// boundary this test exists to guard. The previous version (`let _info:
+/// endringer::CommitInfo;`, an unused, uninitialized binding) proved
+/// nothing at all — it compiled identically whether or not `CommitInfo`
+/// had a `change_id` field.
+#[allow(dead_code)] // never called on purpose — see its own doc comment
+fn _commit_info_has_no_jj_native_fields(info: endringer::CommitInfo) {
+    let endringer::CommitInfo {
+        commit_id: _,
+        parents: _,
+        author: _,
+        committer: _,
+        summary: _,
+        timestamp: _,
+        committer_timestamp: _,
+    } = info;
+}
+
 #[test]
 fn jj_support_boundary_is_git_view() {
-    // Verify no jj-native types exist in the public API.
-    // These would be the presence of fields like `change_id`, `op_log`,
-    // or types like `ChangeId` in the public surface.
-    // Verified by the absence of such symbols at compile time.
-
-    // The CommitInfo struct has no change_id field.
-    let _check: fn() = || {
-        // If this compiles, change_id is not in CommitInfo.
-        let _info: endringer::CommitInfo;
-    };
-
-    // Just verify the test runs — boundary is checked at compile time.
-    assert!(true, "jj-native concepts are not in the public API (compile-time check)");
+    // The real check is `_commit_info_has_no_jj_native_fields`, above,
+    // compiling at all. Nothing to run.
 }
 
 // ── Delegated git-store reads work on jj repositories ────────────────────── //

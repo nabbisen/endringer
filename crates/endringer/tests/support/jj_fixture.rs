@@ -52,11 +52,10 @@ pub fn require_jj() -> bool {
     }
 
     // Record version for CI logs.
-    if let Ok(out) = Command::new("jj").arg("--version").output() {
-        if let Ok(ver) = String::from_utf8(out.stdout) {
+    if let Ok(out) = Command::new("jj").arg("--version").output()
+        && let Ok(ver) = String::from_utf8(out.stdout) {
             eprintln!("jj version: {}", ver.trim());
         }
-    }
     true
 }
 
@@ -156,23 +155,6 @@ impl JjFixture {
         if !status.success() {
             eprintln!("jj {} exited with {:?} (non-zero — may be expected in some tests)",
                 args.join(" "), status.code());
-        }
-    }
-
-    /// Runs a jj command inside the fixture directory using default config.
-    pub fn jj(&self, args: &[&str]) {
-        let fake_home = self.path.join(".fake-home");
-        let jj_config = fake_home.join("jj-config.toml");
-        if jj_config.exists() {
-            self.jj_with_config(&jj_config, args);
-        } else {
-            Command::new("jj")
-                .args(args)
-                .current_dir(&self.path)
-                .env("NO_COLOR", "1")
-                .stdin(std::process::Stdio::null())
-                .status()
-                .expect("jj");
         }
     }
 

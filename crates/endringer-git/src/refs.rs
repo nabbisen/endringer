@@ -15,7 +15,7 @@ pub(crate) fn remotes(repo: &Repository) -> Result<Vec<RemoteInfo>> {
         .into_iter()
         .filter_map(|name_bstr| {
             let name = name_bstr.to_string();
-            let remote = repo.find_remote(name_bstr.as_ref()).ok()?;
+            let remote = repo.find_remote(&name_bstr).ok()?;
 
             let fetch_url = remote
                 .url(gix::remote::Direction::Fetch)
@@ -130,14 +130,17 @@ fn gix_ref_to_info(reference: &gix::Reference<'_>) -> RefInfo {
 
 fn head_ref_info(repo: &Repository) -> Option<RefInfo> {
     let head = repo.head().ok()?;
-    let target = match head.kind {
-        gix::head::Kind::Detached { target, .. } => {
+    // `Head::kind` is private as of gix 0.91 (the attached `Kind` it names
+    // is gone from the public surface too); `detach_repo()` gives back the
+    // same three states as a public `HeadOwned`, whose `Symbolic` variant
+    // still carries a `gix_ref::Reference` with a public `name` field, the
+    // same field access this match already used.
+    let target = match head.detach_repo() {
+        gix::HeadOwned::Detached { target, .. } => {
             RefTarget::Direct(gix_id_to_object_id(target))
         }
-        gix::head::Kind::Symbolic(ref r) => {
-            RefTarget::Symbolic(r.name.as_bstr().to_string())
-        }
-        gix::head::Kind::Unborn(_) => RefTarget::Unborn,
+        gix::HeadOwned::Symbolic(r) => RefTarget::Symbolic(r.name.as_bstr().to_string()),
+        gix::HeadOwned::Unborn(_) => RefTarget::Unborn,
     };
     Some(RefInfo { name: "HEAD".to_owned(), kind: RefKind::Head, target })
 }

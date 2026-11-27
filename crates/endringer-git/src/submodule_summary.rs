@@ -80,12 +80,11 @@ fn inspect_submodule(
         Ok(sub_repo) => {
             let head_commit = sub_repo.head().ok()
                 .and_then(|mut h| h.peel_to_commit().ok())
-                .map(|c| {
+                .and_then(|c| {
                     CommitId::from_hex(&c.id.to_hex().to_string()).ok()
-                })
-                .flatten();
+                });
 
-            let state = if sub_repo.head().ok().map_or(false, |h| h.is_detached()) {
+            let state = if sub_repo.head().ok().is_some_and(|h| h.is_detached()) {
                 SubmoduleState::Detached
             } else {
                 SubmoduleState::Initialized

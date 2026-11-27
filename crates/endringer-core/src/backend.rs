@@ -162,7 +162,7 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn create_tag(&self, _name: &str) -> Result<()> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_tag" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_tag" })
     }
 
     /// Creates an annotated tag at HEAD.
@@ -173,14 +173,14 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn create_annotated_tag(&self, _name: &str, _message: &str) -> Result<()> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_annotated_tag" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "create_annotated_tag" })
     }
 
     /// Deletes the named tag.
     ///
     /// Default: unsupported-feature error.
     fn delete_tag(&self, _name: &str) -> Result<()> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "delete_tag" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "delete_tag" })
     }
 
     // ── Optional-unsupported methods ───────────────────────────────────── //
@@ -191,7 +191,7 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn branch_tracking(&self, _branch: &str) -> Result<BranchTrackingInfo> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_tracking" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_tracking" })
     }
 
     /// Returns tracking metadata for all local branches, sorted ascending
@@ -199,7 +199,7 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn local_branch_tracking(&self) -> Result<Vec<BranchTrackingInfo>> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "local_branch_tracking" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "local_branch_tracking" })
     }
 
     /// Returns `true` if `branch` has been merged into `target`.
@@ -223,7 +223,7 @@ pub trait VcsBackend: Send + Sync {
     ///
     /// Default: unsupported-feature error.
     fn branch_ahead_behind(&self, _branch: &str) -> Result<Option<AheadBehind>> {
-        return Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_ahead_behind" })
+        Err(crate::error::Error::UnsupportedBackendFeature { backend: None, feature: "branch_ahead_behind" })
     }
 
     // ── Operation and conflict state (RFC 008) ─────────────────────────── //

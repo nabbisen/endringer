@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Rust 1.85 or later (the workspace uses `edition = "2024"`)
+- Rust 1.95 or later (the workspace uses `edition = "2024"`)
 - `git` available on `$PATH` (required by integration tests that call the git CLI
   to set up fixture repositories)
 
